@@ -85,6 +85,7 @@ def order_data(data_row):
     latencies = data_row['latency']
     sorted_indices = sorted(range(len(latencies)), key=lambda i: latencies[i])
     data_row['latency'] = [data_row['latency'][i] for i in sorted_indices]
+    data_row['s_t'] = [data_row['s_t'][i] for i in sorted_indices]
     data_row['cpu_use'] = [data_row['cpu_use'][i] for i in sorted_indices]
     data_row['mem_use_percent'] = [data_row['mem_use_percent'][i] for i in sorted_indices]
     data_row['net_send_rate'] = [data_row['net_send_rate'][i] for i in sorted_indices]
@@ -288,10 +289,12 @@ def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = [
     
     #Map node names to integers
     node_to_int = {node: i for i, node in enumerate(unique_nodes)}
+    nodes['node_id'] = nodes['node_name'].map(node_to_int)
     nodes['node_name'] = nodes['node_name'].map(global_map)
     edges['source'] = edges['source'].map(node_to_int)
     edges['target'] = edges['target'].map(node_to_int)
     
+    nodes = nodes.sort_values(by='node_id')
     if one_hot_enc:
         # Convert 'node_name' column to string to ensure proper encoding
         nodes['node_name'] = nodes['node_name'].astype(str)

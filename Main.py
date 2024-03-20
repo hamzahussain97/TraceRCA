@@ -95,11 +95,11 @@ trainer_text= """
 
 print(trainer_text)
 
-#normalize_by_node_features = ['cpu_use', 'mem_use_percent', 'net_send_rate', 'net_receive_rate']
-#data, graphs, measures, global_map, loaders = prepare_data(batch_size=128, one_hot_enc=False,\
-#                                                   normalize_features=['cpu_use', 'mem_use_percent', 'net_send_rate', 'net_receive_rate'],
-#                                                   normalize_by_node_features=normalize_by_node_features,\
-#                                                   scale_features=['latency'])
+normalize_by_node_features = ['cpu_use', 'mem_use_percent', 'net_send_rate', 'net_receive_rate']
+data, graphs, measures, global_map, loaders = prepare_data(batch_size=128, one_hot_enc=False,\
+                                                   normalize_features=['cpu_use', 'mem_use_percent', 'net_send_rate', 'net_receive_rate'],
+                                                   normalize_by_node_features=normalize_by_node_features,\
+                                                   scale_features=['latency'])
 # Initialize the model
 
 input_dim = 4 + len(normalize_by_node_features)
@@ -107,7 +107,7 @@ hidden_dim = 128
 hidden_dim_two = 128
 output_dim = 1  # Assuming binary classification
 #model = GNN(input_dim, hidden_dim, hidden_dim_two, output_dim)
-model = EmbEdgeGNNGRU(input_dim, hidden_dim, len(global_map), 3, 1)
+model = EmbEdgeGNNGRU(input_dim, hidden_dim, len(global_map), 10, 1)
 
 
 # Loss and optimizer
