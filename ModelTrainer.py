@@ -43,6 +43,9 @@ def prepare_data(batch_size, one_hot_enc=False, normalize_features=[], normalize
     val_loader = DataLoader(val_dataset, batch_size=batch_size)
     return data, graphs, measures, global_map, [train_loader, val_loader]
 
+def MAPE(target, output):
+    return torch.mean((target - output).abs() / target.abs())
+
 def RRMSE(output, target):
     target[target==0] = 1
     SE = torch.mean(((output - target)**2) / ((target**2)))
@@ -89,7 +92,7 @@ def train(model, loss_fn, criterion, optimizer, measures, epochs, loaders, recov
         total_val_loss = 0
         total_val_crit = 0
         with torch.no_grad():
-            outputs = torch.tensor([])
+            target = torch.tensor([])
             predictions = torch.tensor([])
             for batch in val_loader:
                 max_pred, recov_pred = model(batch, batch.batch)
@@ -113,14 +116,16 @@ def train(model, loss_fn, criterion, optimizer, measures, epochs, loaders, recov
                 total_val_crit += crit.item()
                 val_crit = total_val_crit/len(val_loader)
                 val_loss = total_val_loss/len(val_loader)
-                if epoch == epochs:
-                    outputs = torch.cat([outputs, trace_lat], axis=0)
-                    predictions = torch.cat([predictions, max_pred], axis=0)
+                target = torch.cat([target, trace_lat], axis=0)
+                predictions = torch.cat([predictions, max_pred], axis=0)
         
         #print(outputs)
         #print(predictions)
-        if epoch == epochs: plot(outputs, predictions)
         print(f"Epoch: {epoch}/{epochs}, Train Loss: {train_loss:.4f}, Train criterion: {train_crit:.4f}, Val Loss: {val_loss:.4f}, Val criterion: {val_crit:.4f}")
+        mape = percentile_mape(target, predictions)
+        print(f"MAPE by percentiles: {', '.join(str(tensor.item()) for tensor in mape.values())}")
+        if epoch == epochs: 
+            plot(target, predictions)
     return model
 
 def predict(model, graph, measures, recov = False, recov_by_node = False, recov_scaling = False):
@@ -154,55 +159,78 @@ def predict(model, graph, measures, recov = False, recov_by_node = False, recov_
         print(graph.y)
     return out
 
-def plot(x, y):
+def percentile_mape(target, predictions):
+    p = percentiles(target,predictions)
+    
+    m_25 = MAPE(torch.tensor(p[25]['x']),torch.tensor(p[25]['y']))
+    m_50 = MAPE(torch.tensor(p[50]['x']),torch.tensor(p[50]['y']))
+    m_90 = MAPE(torch.tensor(p[90]['x']),torch.tensor(p[90]['y']))
+    m_100 = MAPE(torch.tensor(p[100]['x']),torch.tensor(p[100]['y']))
+    
+    return {25: m_25, 50: m_50, 90: m_90, 100:m_100}
+    
+def percentiles(x,y):
     x = x.numpy()
     y = y.numpy()
     percentile_25 = np.percentile(x, 25)
     percentile_50 = np.percentile(x, 50)
-    percentile_75 = np.percentile(x, 90)
-    percentile_100 = np.percentile(x,90)
+    percentile_90 = np.percentile(x, 90)
     
-    print(percentile_25)
-    print(percentile_50)
-    print(percentile_75)
-    print(percentile_100)
+    index_25 = np.where(x <= percentile_25)[0]
+    index_50 = np.where((x > percentile_25) & (x <= percentile_50))[0]
+    index_90 = np.where((x > percentile_50) & (x <= percentile_90))[0]
+    index_100 = np.where((x > percentile_90))[0]
     
-    index_25 = np.where(x < percentile_25)[0]
-    index_50 = np.where(x < percentile_50)[0]
-    index_75 = np.where(x < percentile_75)[0]
-    
+    percentiles = {}
     # Slice values based on percentiles
     x_25 = x[index_25]
     y_25 = y[index_25]
+    p_25 = {'x': x_25, 'y': y_25}
+    percentiles[25] = p_25
     
     x_50 = x[index_50]
     y_50 = y[index_50]
+    p_50 = {'x': x_50, 'y': y_50}
+    percentiles[50] = p_50
     
-    x_75 = x[index_75]
-    y_75 = y[index_75]
+    x_90 = x[index_90]
+    y_90 = y[index_90]
+    p_90 = {'x': x_90, 'y': y_90}
+    percentiles[90] = p_90
+    
+    x_100 = x[index_100]
+    y_100 = y[index_100]
+    p_100 = {'x': x_100, 'y': y_100}
+    percentiles[100] = p_100
+    
+    return percentiles
+
+
+def plot(x, y):
+    p = percentiles(x, y)
     
     plt.figure(1)
-    plt.scatter(x_25,y_25)
-    max_val = max(max(x_25), max(y_25))
+    plt.scatter(p[25]['x'],p[25]['y'])
+    max_val = max(max(p[25]['x']), max(p[25]['y']))
     plt.plot([0, max_val], [0, max_val], color='red', linestyle='--', label='y=x')
     plt.show()
     
     plt.figure(2)
-    plt.scatter(x_50,y_50)
-    max_val = max(max(x_50), max(y_50))
+    plt.scatter(p[50]['x'],p[50]['y'])
+    max_val = max(max(p[50]['x']), max(p[50]['y']))
     plt.plot([0, max_val], [0, max_val], color='red', linestyle='--', label='y=x')
     plt.show()
     
     
     plt.figure(3)
-    plt.scatter(x_75,y_75)
-    max_val = max(max(x_75), max(y_75))
+    plt.scatter(p[90]['x'],p[90]['y'])
+    max_val = max(max(p[90]['x']), max(p[90]['y']))
     plt.plot([0, max_val], [0, max_val], color='red', linestyle='--', label='y=x')
     plt.show()
     
     plt.figure(4)
-    plt.scatter(x,y)
-    max_val = max(max(x), max(y))
+    plt.scatter(p[100]['x'],p[100]['y'])
+    max_val = max(max(p[100]['x']), max(p[100]['y']))
     plt.plot([0, max_val], [0, max_val], color='red', linestyle='--', label='y=x')
     plt.show()
     return 0

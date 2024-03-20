@@ -6,7 +6,7 @@ Created on Mon Mar  4 13:57:41 2024
 @author: Hamza
 """
 import torch
-from ModelTrainer import prepare_data, train, predict, RRMSE, MBE
+from ModelTrainer import prepare_data, train, predict, RRMSE, MBE, MAPE
 from BaselineModel import GNN, EmbeddingGNN, EmbNodeGNNGRU, EmbEdgeGNNGRU
 
 '''
@@ -107,7 +107,7 @@ hidden_dim = 128
 hidden_dim_two = 128
 output_dim = 1  # Assuming binary classification
 #model = GNN(input_dim, hidden_dim, hidden_dim_two, output_dim)
-model = EmbEdgeGNNGRU(input_dim, hidden_dim, len(global_map), 10, 1)
+model = EmbEdgeGNNGRU(input_dim, hidden_dim, len(global_map), 3, 1)
 
 
 # Loss and optimizer

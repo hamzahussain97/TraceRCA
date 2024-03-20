@@ -25,7 +25,7 @@ from torch_geometric.utils import to_networkx
 def prepare_data(path, normalize_features= [], normalize_by_node_features = [], scale_features = []):
     data = pd.DataFrame()
     data_dir = Path(path)
-    file_list = list(map(str, data_dir.glob("*.pkl")))
+    file_list = list(map(str, data_dir.glob("*admin-order_abort_1011.pkl")))
     '''
     ##################################################
     print("\n***********File List************")
