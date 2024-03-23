@@ -21,7 +21,6 @@ from scipy.special import inv_boxcox
 from torch_geometric.utils import to_networkx
 
 
-
 def prepare_data(path, normalize_features= [], normalize_by_node_features = [], scale_features = []):
     data = pd.DataFrame()
     data_dir = Path(path)
@@ -103,13 +102,6 @@ def micro_to_mili(latencies):
     return [latency / 1000 for latency in latencies]
 
 def scale(data, column):
-    #exploded_data = data.explode('latency')
-    #transformed_values, lambda_parameter = boxcox(exploded_data['latency'].astype(float))
-    #exploded_data['new_latency'] = transformed_values
-    #df_reversed_latency = exploded_data.groupby(exploded_data.index).agg({'latency': list, 'new_latency': list})
-    #df_other_columns = exploded_data.groupby(exploded_data.index).first().drop(columns=['latency', 'new_latency'])
-    #reversed_data = pd.merge(df_reversed_latency, df_other_columns, left_index=True, right_index=True)
-
     values = pd.DataFrame()
     values = data.explode(column)
     
@@ -257,7 +249,7 @@ def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = [
     #Assume that the metrics belong to the target node in the edge. Store the 
     #node name of the target with the metrics
     nodes['node_name'] = edges['target']
-    node_names = nodes['node_name']
+    node_names = edges['target']
 
     y_edge_features = {'latency': trace['latency']}
     y_edge_features = pd.DataFrame(y_edge_features)
@@ -290,11 +282,13 @@ def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = [
     #Map node names to integers
     node_to_int = {node: i for i, node in enumerate(unique_nodes)}
     nodes['node_id'] = nodes['node_name'].map(node_to_int)
-    nodes['node_name'] = nodes['node_name'].map(global_map)
     edges['source'] = edges['source'].map(node_to_int)
     edges['target'] = edges['target'].map(node_to_int)
     
     nodes = nodes.sort_values(by='node_id')
+    nodes = nodes.drop(columns=['node_id'])
+    
+    nodes['node_name'] = nodes['node_name'].map(global_map)
     if one_hot_enc:
         # Convert 'node_name' column to string to ensure proper encoding
         nodes['node_name'] = nodes['node_name'].astype(str)
@@ -314,26 +308,17 @@ def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = [
     y_edge_tensor = torch.tensor(y_edge_features.values, dtype=torch.float32).squeeze(dim=1)
     trace_lat_tensor = torch.tensor(trace_lat, dtype=torch.float32)
     graph = Data(x=nodes_tensor, edge_index=edges_tensor, y=y_edge_tensor, trace_lat=trace_lat_tensor)
-    graph.node_names = node_names
-    #inv_map = {v: k for k, v in node_to_int.items()}
+    graph.node_names = node_names[-1:]
     return graph
 
-def preprocess(path, one_hot_enc = False, normalize_features= [], normalize_by_node_features = [], scale_features = []):
+def preprocess(path, one_hot_enc = False, normalize_features = [], normalize_by_node_features = [], scale_features = []):
     tqdm.pandas()
     data, global_map, measures = prepare_data(path, normalize_features, normalize_by_node_features, scale_features)
-    #inv_maps = []
     print("\n********************************")
     print("********Preparing Graphs**********")
     print("********************************\n")
     graphs = data.progress_apply(lambda trace: prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features), axis=1)
     graphs = graphs.to_list()
-    #graphs = []
-    '''
-    for index, trace in tqdm(data.iterrows(), total=data.shape[0]):
-        graph, inv_map = prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features)
-        graphs.append(graph)
-        inv_maps.append(inv_map)
-    '''
     return data, graphs, global_map, measures
 
 if __name__ == "__main__":   

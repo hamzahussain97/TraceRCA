@@ -6,60 +6,154 @@ Created on Mon Mar  4 13:57:41 2024
 @author: Hamza
 """
 import torch
-from ModelTrainer import prepare_data, train, predict, RRMSE, MBE, MAPE
-from BaselineModel import GNN, EmbeddingGNN, EmbNodeGNNGRU, EmbEdgeGNNGRU
+#from ModelTrainer import prepare_data, train, predict, RRMSE, MBE, MAPE, ModelTrainer
+from ModelTrainer import ModelTrainer, predict
+from BaselineModel import GNN, EmbGNN, EmbNodeGNNGRU, EmbEdgeGNNGRU
+
+
+trainer_text = """
+###############################################################################
+########### Train Baseline Model Nodes encoded as one hot.         ############
+########### Target scaled using log and truncated between 0,1      ############
+###############################################################################
+"""
+print(trainer_text)
+
+# Initialize Model Trainer
+
+data_dir = './A/microservice/test/'
+batch_size = 128
+predict_graph = True
+one_hot_enc = True
+normalize_features = ['cpu_use', 'mem_use_percent', 'net_send_rate', 'net_receive_rate']
+normalize_by_node_features = ['cpu_use', 'mem_use_percent', 'net_send_rate', 'net_receive_rate']
+scale_features = ['latency']
+validate_on_trace = False
+model_trainer = ModelTrainer(data_dir, batch_size, predict_graph, one_hot_enc=one_hot_enc,\
+                             normalize_features=normalize_features,\
+                             normalize_by_node_features=normalize_by_node_features,\
+                             scale_features=scale_features, validate_on_trace=validate_on_trace)
+
+# Initialize the model
+input_dim = len(normalize_features) + len(normalize_by_node_features) + len(model_trainer.global_map)
+hidden_dim = 128
+hidden_dim_two = 128
+output_dim = 1  # Assuming binary classification
+
+model = GNN(input_dim, hidden_dim, output_dim,\
+            predict_graph=model_trainer.predict_graph)
+model_trainer.set_model(model)
+
+# Define Loss functions and optimizer
+epochs = 2
+loss = torch.nn.MSELoss(reduction='mean')
+criterion = torch.nn.L1Loss(reduction='mean')
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+model = model_trainer.train(epochs, loss, criterion, optimizer)
+
+model_trainer.predict(graph_idx=0)
+
+trainer_text = """
+###############################################################################
+########### Train Baseline Model Nodes encoded as int.             ############
+########### Target scaled using log and truncated between 0,1      ############
+###############################################################################
+"""
+print(trainer_text)
+
+# Initialize Model Trainer
+
+data_dir = './A/microservice/test/'
+batch_size = 128
+predict_graph = True
+one_hot_enc = False
+normalize_features = ['cpu_use', 'mem_use_percent', 'net_send_rate', 'net_receive_rate']
+normalize_by_node_features = ['cpu_use', 'mem_use_percent', 'net_send_rate', 'net_receive_rate']
+scale_features = ['latency']
+validate_on_trace = False
+model_trainer = ModelTrainer(data_dir, batch_size, predict_graph, one_hot_enc=one_hot_enc,\
+                             normalize_features=normalize_features,\
+                             normalize_by_node_features=normalize_by_node_features,\
+                             scale_features=scale_features, validate_on_trace=validate_on_trace)
+
+# Initialize the model
+input_dim = len(normalize_features) + len(normalize_by_node_features) + 1
+hidden_dim = 128
+hidden_dim_two = 128
+output_dim = 1  # Assuming binary classification
+
+model = GNN(input_dim, hidden_dim, output_dim,\
+            predict_graph=model_trainer.predict_graph)
+model_trainer.set_model(model)
+
+# Define Loss functions and optimizer
+epochs = 2
+loss = torch.nn.MSELoss(reduction='mean')
+criterion = torch.nn.L1Loss(reduction='mean')
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+model = model_trainer.train(epochs, loss, criterion, optimizer)
+
+model_trainer.predict(graph_idx=0)
+
+
+trainer_text = """
+###############################################################################
+########### Train Baseline Model Nodes encoded as embeddings.      ############
+########### Target scaled using log and truncated between 0,1      ############
+###############################################################################
+"""
+print(trainer_text)
+
+# Initialize the model
+input_dim = len(normalize_features) + len(normalize_by_node_features)
+hidden_dim = 128
+hidden_dim_two = 128
+vocab_size = len(model_trainer.global_map)
+node_embedding_size = 5
+output_dim = 1  # Assuming binary classification
+
+model = GNN(input_dim, hidden_dim, vocab_size, node_embedding_size, output_dim,\
+            predict_graph=model_trainer.predict_graph)
+model_trainer.set_model(model)
+
+# Define Loss functions and optimizer
+epochs = 2
+loss = torch.nn.MSELoss(reduction='mean')
+criterion = torch.nn.L1Loss(reduction='mean')
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+model = model_trainer.train(epochs, loss, criterion, optimizer)
+
+model_trainer.predict(graph_idx=0)
 
 '''
 trainer_text = """
 ###############################################################################
-########### Train Vanilla Model with no changes to data and simple ############
-########### Optimizer. Nodes encoded as one hot                    ############
+########### Train NodeGNNGRU Model Nodes encoded as embeddings.    ############
+########### Target scaled using log and truncated between 0,1      ############
 ###############################################################################
 """
 print(trainer_text)
 
-data, measures, global_map, loaders = prepare_data(batch_size=128, one_hot_enc=True)
-
 # Initialize the model
-input_dim = 2 + len(global_map)
-hidden_dim = 64
-hidden_dim_two = 64
+input_dim = len(normalize_features) + len(normalize_by_node_features)
+hidden_dim = 128
+hidden_dim_two = 128
+vocab_size = len(model_trainer.global_map)
+node_embedding_size = 5
 output_dim = 1  # Assuming binary classification
-model = GNN(input_dim, hidden_dim, hidden_dim_two, output_dim)
 
-# Loss and optimizer
-MSE = torch.nn.MSELoss(reduction='mean')
-MAE = torch.nn.L1Loss(reduction='mean')
+model = GNN(input_dim, hidden_dim, vocab_size, node_embedding_size, output_dim,\
+            predict_graph=model_trainer.predict_graph)
+model_trainer.set_model(model)
+
+# Define Loss functions and optimizer
+epochs = 2
+loss = torch.nn.MSELoss(reduction='mean')
+criterion = torch.nn.L1Loss(reduction='mean')
 optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
-model = train(model, MSE, MAE, optimizer, measures, 10, loaders)
-predict(model, data[0], measures)
+model = model_trainer.train(epochs, loss, criterion, optimizer)
 
-
-trainer_text= """
-###############################################################################
-########### Train Embedding Model with normalizing features/target##############
-########### Extra node normalized features                       ##############
-###############################################################################
-"""
-print(trainer_text)
-normalize_by_node_features = ['cpu_use', 'mem_use_percent']
-data, measures, global_map, loaders = prepare_data(batch_size=128, one_hot_enc=False,\
-                                                   normalize_features=['latency', 'cpu_use', 'mem_use_percent'], \
-                                                   normalize_by_node_features=normalize_by_node_features)
-# Initialize the model
-input_dim = 2 + len(normalize_by_node_features)
-hidden_dim = 64
-hidden_dim_two = 64
-output_dim = 1  # Assuming binary classification
-#model = GNN(input_dim, hidden_dim, hidden_dim_two, output_dim)
-model = EmbeddingGNN(input_dim, hidden_dim, len(global_map), 10, 1)
-
-# Loss and optimizer
-MSE = torch.nn.MSELoss(reduction='mean')
-MAE = torch.nn.L1Loss(reduction='mean')
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-model = train(model, RRMSE, MAE, optimizer, measures, 10, loaders, recov=True)
-predict(model, data[0], measures, recov=True)
+model_trainer.predict(graph_idx=0)
 
 
 trainer_text= """
@@ -85,7 +179,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 model = train(model, MSE, MAE, optimizer, measures, 10, loaders, recov=True)
 predict(model, data[0], measures, recov=True)
 
-'''
+
 trainer_text= """
 ###############################################################################
 ########### Train Embedding Model with normalizing target by node #############
@@ -95,30 +189,41 @@ trainer_text= """
 
 print(trainer_text)
 
-normalize_by_node_features = ['cpu_use', 'mem_use_percent', 'net_send_rate', 'net_receive_rate']
-data, graphs, measures, global_map, loaders = prepare_data(batch_size=128, one_hot_enc=False,\
-                                                   normalize_features=['cpu_use', 'mem_use_percent', 'net_send_rate', 'net_receive_rate'],
-                                                   normalize_by_node_features=normalize_by_node_features,\
-                                                   scale_features=['latency'])
-# Initialize the model
+# Initialize Model Trainer
 
+data_dir = './A/microservice/test/'
+batch_size = 128
+predict_graph = True
+normalize_features = ['cpu_use', 'mem_use_percent', 'net_send_rate', 'net_receive_rate', 'latency']
+normalize_by_node_features = ['cpu_use', 'mem_use_percent', 'net_send_rate', 'net_receive_rate']
+scale_features = []
+validate_on_trace = False
+model_trainer = ModelTrainer(data_dir, batch_size, predict_graph, normalize_features=normalize_features,\
+                             normalize_by_node_features=normalize_by_node_features,\
+                             scale_features=scale_features, validate_on_trace=validate_on_trace)
+
+# Initialize the model
 input_dim = 4 + len(normalize_by_node_features)
 hidden_dim = 128
 hidden_dim_two = 128
 output_dim = 1  # Assuming binary classification
-#model = GNN(input_dim, hidden_dim, hidden_dim_two, output_dim)
-model = EmbEdgeGNNGRU(input_dim, hidden_dim, len(global_map), 10, 1)
+vocab_size = len(model_trainer.global_map)
+node_embedding_size = 3 
 
+model = EmbNodeGNNGRU(input_dim, hidden_dim, vocab_size, node_embedding_size,\
+                      output_dim, predict_graph=model_trainer.predict_graph)
+model_trainer.set_model(model)
 
-# Loss and optimizer
-MSE = torch.nn.MSELoss(reduction='mean')
-MAE = torch.nn.L1Loss(reduction='mean')
+# Define Loss functions and optimizer
+epochs = 5
+loss = torch.nn.MSELoss(reduction='mean')
+criterion = torch.nn.L1Loss(reduction='mean')
 optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
-model = train(model, MSE, MAE, optimizer, measures, 50, loaders, recov_scaling=True)
+model = model_trainer.train(epochs, loss, criterion, optimizer)
 
-predict(model, graphs[0], measures, recov_scaling=True)
+model_trainer.predict(graph_idx=0)
 
-'''
+
 trainer_text= """
 ###############################################################################
 ########### Train Vanilla Model with normalizing features by node #############
