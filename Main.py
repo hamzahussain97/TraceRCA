@@ -9,11 +9,15 @@ import torch
 #from ModelTrainer import prepare_data, train, predict, RRMSE, MBE, MAPE, ModelTrainer
 from ModelTrainer import ModelTrainer, predict
 from BaselineModel import GNN, EmbGNN, EmbNodeGNNGRU, EmbEdgeGNNGRU
+import warnings
+
+
+warnings.filterwarnings('ignore')
 
 
 trainer_text = """
 ###############################################################################
-########### Train Baseline Model Nodes encoded as one hot.         ############
+########### NodeGNNGRU Model using edges and validate on graph.    ############
 ########### Target scaled using log and truncated between 0,1      ############
 ###############################################################################
 """
@@ -23,24 +27,25 @@ print(trainer_text)
 
 data_dir = './A/microservice/test/'
 batch_size = 128
-predict_graph = True
-one_hot_enc = True
+predict_graph = False
+one_hot_enc = False
 normalize_features = ['cpu_use', 'mem_use_percent', 'net_send_rate', 'net_receive_rate']
 normalize_by_node_features = ['cpu_use', 'mem_use_percent', 'net_send_rate', 'net_receive_rate']
 scale_features = ['latency']
-validate_on_trace = False
+validate_on_trace = True
 model_trainer = ModelTrainer(data_dir, batch_size, predict_graph, one_hot_enc=one_hot_enc,\
                              normalize_features=normalize_features,\
                              normalize_by_node_features=normalize_by_node_features,\
                              scale_features=scale_features, validate_on_trace=validate_on_trace)
 
 # Initialize the model
-input_dim = len(normalize_features) + len(normalize_by_node_features) + len(model_trainer.global_map)
+input_dim = len(normalize_features) + len(normalize_by_node_features)
 hidden_dim = 128
-hidden_dim_two = 128
+vocab_size = len(model_trainer.global_map)
+node_embedding_size = 5
 output_dim = 1  # Assuming binary classification
 
-model = GNN(input_dim, hidden_dim, output_dim,\
+model = EmbNodeGNNGRU(input_dim, hidden_dim, vocab_size, node_embedding_size, output_dim,\
             predict_graph=model_trainer.predict_graph)
 model_trainer.set_model(model)
 
@@ -55,14 +60,14 @@ model_trainer.predict(graph_idx=0)
 
 trainer_text = """
 ###############################################################################
-########### Train Baseline Model Nodes encoded as int.             ############
+########### EdgeGNNGRU Model using edges and validate on graph     ############
 ########### Target scaled using log and truncated between 0,1      ############
 ###############################################################################
 """
 print(trainer_text)
 
 # Initialize Model Trainer
-
+'''
 data_dir = './A/microservice/test/'
 batch_size = 128
 predict_graph = True
@@ -75,14 +80,15 @@ model_trainer = ModelTrainer(data_dir, batch_size, predict_graph, one_hot_enc=on
                              normalize_features=normalize_features,\
                              normalize_by_node_features=normalize_by_node_features,\
                              scale_features=scale_features, validate_on_trace=validate_on_trace)
-
+'''
 # Initialize the model
-input_dim = len(normalize_features) + len(normalize_by_node_features) + 1
+input_dim = len(normalize_features) + len(normalize_by_node_features)
 hidden_dim = 128
-hidden_dim_two = 128
+vocab_size = len(model_trainer.global_map)
+node_embedding_size = 5
 output_dim = 1  # Assuming binary classification
 
-model = GNN(input_dim, hidden_dim, output_dim,\
+model = EmbEdgeGNNGRU(input_dim, hidden_dim, vocab_size, node_embedding_size, output_dim,\
             predict_graph=model_trainer.predict_graph)
 model_trainer.set_model(model)
 
@@ -95,7 +101,7 @@ model = model_trainer.train(epochs, loss, criterion, optimizer)
 
 model_trainer.predict(graph_idx=0)
 
-
+'''
 trainer_text = """
 ###############################################################################
 ########### Train Baseline Model Nodes encoded as embeddings.      ############
@@ -112,7 +118,7 @@ vocab_size = len(model_trainer.global_map)
 node_embedding_size = 5
 output_dim = 1  # Assuming binary classification
 
-model = GNN(input_dim, hidden_dim, vocab_size, node_embedding_size, output_dim,\
+model = EmbGNN(input_dim, hidden_dim, vocab_size, node_embedding_size, output_dim,\
             predict_graph=model_trainer.predict_graph)
 model_trainer.set_model(model)
 
@@ -125,7 +131,7 @@ model = model_trainer.train(epochs, loss, criterion, optimizer)
 
 model_trainer.predict(graph_idx=0)
 
-'''
+
 trainer_text = """
 ###############################################################################
 ########### Train NodeGNNGRU Model Nodes encoded as embeddings.    ############

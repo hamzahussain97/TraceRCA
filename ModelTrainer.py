@@ -14,6 +14,7 @@ from Preprocess import preprocess, recover, recover_by_node, recover_value
 from torch.utils.data import random_split
 from torch_geometric.loader import DataLoader
 from BaselineModel import GNN
+from torchmetrics.functional.regression import explained_variance
 import numpy as np
 
 class ModelTrainer():
@@ -94,9 +95,11 @@ class ModelTrainer():
             
             #print(outputs)
             #print(predictions)
-            print(f"Epoch: {epoch}/{epochs}, Train Loss: {train_loss:.4f}, Train criterion: {train_crit:.4f}, Val Loss: {val_loss:.4f}, Val criterion: {val_crit:.4f}")
-            mape = percentile_mape(target, predictions)
-            print(f"MAPE by percentiles: {', '.join(f'{tensor.item():.4f}' for tensor in mape.values())}")
+            mape = MAPE(target, predictions)
+            e_var = explained_variance(predictions, target)
+            print(f"Epoch: {epoch}/{epochs}, Train Loss: {train_loss:.4f}, Train criterion: {train_crit:.4f}, Val Loss: {val_loss:.4f}, Val criterion: {val_crit:.4f}, Val MAPE: {mape:.4f}, Exp Var: {e_var:.4f}")
+            p_mape = percentile_mape(target, predictions)
+            print(f"MAPE by percentiles: {', '.join(f'{tensor.item():.4f}' for tensor in p_mape.values())}")
             if epoch == epochs: 
                 plot(target, predictions)
         return self.model
@@ -275,21 +278,25 @@ def percentile_mape(target, predictions):
     
     m_25 = MAPE(torch.tensor(p[25]['x']),torch.tensor(p[25]['y']))
     m_50 = MAPE(torch.tensor(p[50]['x']),torch.tensor(p[50]['y']))
+    m_75 = MAPE(torch.tensor(p[75]['x']),torch.tensor(p[75]['y']))
     m_90 = MAPE(torch.tensor(p[90]['x']),torch.tensor(p[90]['y']))
     m_100 = MAPE(torch.tensor(p[100]['x']),torch.tensor(p[100]['y']))
     
-    return {25: m_25, 50: m_50, 90: m_90, 100:m_100}
+    return {25: m_25, 50: m_50, 75: m_75, 90: m_90, 100:m_100}
     
 def percentiles(x,y):
     x = x.numpy()
     y = y.numpy()
+    percentile_10 = np.percentile(x, 10)
     percentile_25 = np.percentile(x, 25)
     percentile_50 = np.percentile(x, 50)
+    percentile_75 = np.percentile(x, 75)
     percentile_90 = np.percentile(x, 90)
     
-    index_25 = np.where(x <= percentile_25)[0]
+    index_25 = np.where((x > percentile_10) & (x <= percentile_25))[0]
     index_50 = np.where((x > percentile_25) & (x <= percentile_50))[0]
-    index_90 = np.where((x > percentile_50) & (x <= percentile_90))[0]
+    index_75 = np.where((x > percentile_50) & (x <= percentile_75))[0]
+    index_90 = np.where((x > percentile_75) & (x <= percentile_90))[0]
     index_100 = np.where((x > percentile_90))[0]
     
     percentiles = {}
@@ -303,6 +310,11 @@ def percentiles(x,y):
     y_50 = y[index_50]
     p_50 = {'x': x_50, 'y': y_50}
     percentiles[50] = p_50
+    
+    x_75 = x[index_75]
+    y_75 = y[index_75]
+    p_75 = {'x': x_75, 'y': y_75}
+    percentiles[75] = p_75
     
     x_90 = x[index_90]
     y_90 = y[index_90]
@@ -321,8 +333,9 @@ def plot(x, y):
     p = percentiles(x, y)
     plot_figure(1, p, 25)
     plot_figure(2, p, 50)
-    plot_figure(3, p, 90)
-    plot_figure(4, p, 100)
+    plot_figure(3, p, 75)
+    plot_figure(4, p, 90)
+    plot_figure(5, p, 100)
     
 def plot_figure(i, p, u_l):
     plt.figure(i)

@@ -174,11 +174,10 @@ class EmbEdgeGNNGRU(torch.nn.Module):
         # Initialize hidden states
         hidden_state = self.initial_hs.expand(1, batch_edge.max().item() + 1, 1)
         predictions, hidden_state = self.gru_cell(gru_input, hidden_state)
+        # Apply mask to predictions
+        masked_predictions = predictions.squeeze() * mask
         
         if self.predict_graph:
-            # Apply mask to predictions
-            masked_predictions = predictions.squeeze() * mask
-            
             # Find the index of the last non-zero value in the max_nodes dimension for each sample
             last_non_zero_indices = torch.tensor([torch.nonzero(row).tolist()[-1][-1] if torch.sum(row) > 0 else 0 for row in masked_predictions])
     
