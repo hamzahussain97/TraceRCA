@@ -39,6 +39,7 @@ def prepare_data(path, normalize_features= [], normalize_by_node_features = [], 
         with open(data_file, 'rb') as file:
             file_data = pickle.load(file)
         df = pd.DataFrame(file_data)
+        df['original_latency'] = df['latency']
         df = df.apply(lambda row: order_data(row), axis=1)
         #df['starttime'] = df.apply(lambda row: get_start_times(row['timestamp'], row['latency']), axis=1)
         df['timestamp'] = df['timestamp'].apply(lambda stamps: stamps_to_time(stamps))
@@ -67,15 +68,18 @@ def prepare_data(path, normalize_features= [], normalize_by_node_features = [], 
                 '6b479c5de1a70eb50b1ea151c93b6181']
     data = data[~data['trace_id'].isin(outliers)]
     measures = {}
-    for feature in normalize_by_node_features:
-        data, feature_measures = normalize_by_node(data, feature)
-        measures[feature] = feature_measures
-    for feature in normalize_features:
-        data, feature_mean, feature_std = normalize(data, feature)
-        measures[feature] = [feature_mean, feature_std]
+    transformation_features = normalize_by_node_features + normalize_features + scale_features
+    for feature in transformation_features:
+        measures[feature] = {}
     for feature in scale_features:
         data, feature_max, feature_min = scale(data, feature)
-        measures[feature] = [feature_max, feature_min]
+        measures[feature]['scale'] = [feature_max, feature_min]
+    for feature in normalize_by_node_features:
+        data, feature_measures = normalize_by_node(data, feature)
+        measures[feature]['norm_by_node'] = feature_measures
+    for feature in normalize_features:
+        data, feature_mean, feature_std = normalize(data, feature)
+        measures[feature]['norm'] = [feature_mean, feature_std]
     
     global_map = prepare_global_map(data)
     return data, global_map, measures
@@ -84,6 +88,7 @@ def order_data(data_row):
     latencies = data_row['latency']
     sorted_indices = sorted(range(len(latencies)), key=lambda i: latencies[i])
     data_row['latency'] = [data_row['latency'][i] for i in sorted_indices]
+    #data_row['original_latency'] = [data_row['original_latency'][i] for i in sorted_indices]
     data_row['s_t'] = [data_row['s_t'][i] for i in sorted_indices]
     data_row['cpu_use'] = [data_row['cpu_use'][i] for i in sorted_indices]
     data_row['mem_use_percent'] = [data_row['mem_use_percent'][i] for i in sorted_indices]
@@ -107,7 +112,8 @@ def scale(data, column):
     
     maximum = values[column].max()
     minimum = values[column].min()
-    data['original_latency'] = data['latency']
+    print(maximum)
+    print(minimum)
     data[column] = data[column].apply(lambda row: scale_values(row, maximum, minimum))
     return data, maximum, minimum
 
@@ -236,7 +242,7 @@ def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = [
              'mem_use_percent': trace['mem_use_percent'],
              'net_send_rate': trace['net_send_rate'],
              'net_receive_rate': trace['net_receive_rate']}
-        
+  
     for feature in normalize_by_node_features:
         if feature != 'latency':
             nodes[feature+'_normalized'] = trace[feature+'_normalized']
@@ -253,7 +259,7 @@ def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = [
 
     y_edge_features = {'latency': trace['latency']}
     y_edge_features = pd.DataFrame(y_edge_features)
-    trace_lat = y_edge_features.max()
+    trace_lat = y_edge_features.iloc[-1]
     
     #Find all unique node names
     unique_nodes = pd.concat([edges['source'], edges['target']]).unique()
@@ -308,7 +314,8 @@ def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = [
     y_edge_tensor = torch.tensor(y_edge_features.values, dtype=torch.float32).squeeze(dim=1)
     trace_lat_tensor = torch.tensor(trace_lat, dtype=torch.float32)
     graph = Data(x=nodes_tensor, edge_index=edges_tensor, y=y_edge_tensor, trace_lat=trace_lat_tensor)
-    graph.node_names = node_names[-1:]
+    graph.node_names = node_names
+    graph.first_node = node_names[-1:]
     return graph
 
 def preprocess(path, one_hot_enc = False, normalize_features = [], normalize_by_node_features = [], scale_features = []):

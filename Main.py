@@ -7,7 +7,7 @@ Created on Mon Mar  4 13:57:41 2024
 """
 import torch
 #from ModelTrainer import prepare_data, train, predict, RRMSE, MBE, MAPE, ModelTrainer
-from ModelTrainer import ModelTrainer, predict
+from ModelTrainer import ModelTrainer, predict, MAPE
 from BaselineModel import GNN, EmbGNN, EmbNodeGNNGRU, EmbEdgeGNNGRU
 import warnings
 
@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 
 trainer_text = """
 ###############################################################################
-########### NodeGNNGRU Model using edges and validate on graph.    ############
+########### NodeGNNGRU Model to predict graph. Loss fn MSE         ############
 ########### Target scaled using log and truncated between 0,1      ############
 ###############################################################################
 """
@@ -27,12 +27,12 @@ print(trainer_text)
 
 data_dir = './A/microservice/test/'
 batch_size = 128
-predict_graph = False
+predict_graph = True
 one_hot_enc = False
 normalize_features = ['cpu_use', 'mem_use_percent', 'net_send_rate', 'net_receive_rate']
 normalize_by_node_features = ['cpu_use', 'mem_use_percent', 'net_send_rate', 'net_receive_rate']
 scale_features = ['latency']
-validate_on_trace = True
+validate_on_trace = False
 model_trainer = ModelTrainer(data_dir, batch_size, predict_graph, one_hot_enc=one_hot_enc,\
                              normalize_features=normalize_features,\
                              normalize_by_node_features=normalize_by_node_features,\
@@ -50,7 +50,7 @@ model = EmbNodeGNNGRU(input_dim, hidden_dim, vocab_size, node_embedding_size, ou
 model_trainer.set_model(model)
 
 # Define Loss functions and optimizer
-epochs = 2
+epochs = 50
 loss = torch.nn.MSELoss(reduction='mean')
 criterion = torch.nn.L1Loss(reduction='mean')
 optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
@@ -60,6 +60,87 @@ model_trainer.predict(graph_idx=0)
 
 trainer_text = """
 ###############################################################################
+########### NodeGNNGRU Model to predict graph. Loss fn MAPE        ############
+########### Target scaled using log and truncated between 0,1      ############
+###############################################################################
+"""
+print(trainer_text)
+
+# Initialize the model
+input_dim = len(normalize_features) + len(normalize_by_node_features)
+hidden_dim = 128
+vocab_size = len(model_trainer.global_map)
+node_embedding_size = 5
+output_dim = 1  # Assuming binary classification
+
+model = EmbNodeGNNGRU(input_dim, hidden_dim, vocab_size, node_embedding_size, output_dim,\
+            predict_graph=model_trainer.predict_graph)
+model_trainer.set_model(model)
+
+# Define Loss functions and optimizer
+loss = torch.nn.MSELoss(reduction='mean')
+criterion = torch.nn.L1Loss(reduction='mean')
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+model = model_trainer.train(epochs, MAPE, criterion, optimizer)
+
+model_trainer.predict(graph_idx=0)
+
+trainer_text = """
+###############################################################################
+########### EdgeGNNGRU Model to predict graph. Loss fn MSE         ############
+########### Target scaled using log and truncated between 0,1      ############
+###############################################################################
+"""
+print(trainer_text)
+
+# Initialize the model
+input_dim = len(normalize_features) + len(normalize_by_node_features)
+hidden_dim = 128
+vocab_size = len(model_trainer.global_map)
+node_embedding_size = 5
+output_dim = 1  # Assuming binary classification
+
+model = EmbEdgeGNNGRU(input_dim, hidden_dim, vocab_size, node_embedding_size, output_dim,\
+            predict_graph=model_trainer.predict_graph)
+model_trainer.set_model(model)
+
+# Define Loss functions and optimizer
+loss = torch.nn.MSELoss(reduction='mean')
+criterion = torch.nn.L1Loss(reduction='mean')
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+model = model_trainer.train(epochs, loss, criterion, optimizer)
+
+model_trainer.predict(graph_idx=0)
+
+trainer_text = """
+###############################################################################
+########### EdgeGNNGRU Model to predict graph. Loss fn MAPE        ############
+########### Target scaled using log and truncated between 0,1      ############
+###############################################################################
+"""
+print(trainer_text)
+
+# Initialize the model
+input_dim = len(normalize_features) + len(normalize_by_node_features)
+hidden_dim = 128
+vocab_size = len(model_trainer.global_map)
+node_embedding_size = 5
+output_dim = 1  # Assuming binary classification
+
+model = EmbEdgeGNNGRU(input_dim, hidden_dim, vocab_size, node_embedding_size, output_dim,\
+            predict_graph=model_trainer.predict_graph)
+model_trainer.set_model(model)
+
+# Define Loss functions and optimizer
+loss = torch.nn.MSELoss(reduction='mean')
+criterion = torch.nn.L1Loss(reduction='mean')
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+model = model_trainer.train(epochs, MAPE, criterion, optimizer)
+
+model_trainer.predict(graph_idx=0)
+'''
+trainer_text = """
+###############################################################################
 ########### EdgeGNNGRU Model using edges and validate on graph     ############
 ########### Target scaled using log and truncated between 0,1      ############
 ###############################################################################
@@ -67,7 +148,7 @@ trainer_text = """
 print(trainer_text)
 
 # Initialize Model Trainer
-'''
+
 data_dir = './A/microservice/test/'
 batch_size = 128
 predict_graph = True
@@ -80,7 +161,7 @@ model_trainer = ModelTrainer(data_dir, batch_size, predict_graph, one_hot_enc=on
                              normalize_features=normalize_features,\
                              normalize_by_node_features=normalize_by_node_features,\
                              scale_features=scale_features, validate_on_trace=validate_on_trace)
-'''
+
 # Initialize the model
 input_dim = len(normalize_features) + len(normalize_by_node_features)
 hidden_dim = 128
@@ -100,7 +181,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
 model = model_trainer.train(epochs, loss, criterion, optimizer)
 
 model_trainer.predict(graph_idx=0)
-
+'''
 '''
 trainer_text = """
 ###############################################################################

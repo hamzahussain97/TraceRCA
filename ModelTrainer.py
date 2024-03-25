@@ -51,7 +51,6 @@ class ModelTrainer():
         # Create DataLoaders for training and validation
         self.train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
         self.val_loader = DataLoader(val_dataset, batch_size=self.batch_size)
-        self.measures = measures
         self.data = data
         self.graphs = graphs
         self.measures = measures
@@ -95,7 +94,7 @@ class ModelTrainer():
             
             #print(outputs)
             #print(predictions)
-            mape = MAPE(target, predictions)
+            mape = MAPE(predictions, target)
             e_var = explained_variance(predictions, target)
             print(f"Epoch: {epoch}/{epochs}, Train Loss: {train_loss:.4f}, Train criterion: {train_crit:.4f}, Val Loss: {val_loss:.4f}, Val criterion: {val_crit:.4f}, Val MAPE: {mape:.4f}, Exp Var: {e_var:.4f}")
             p_mape = percentile_mape(target, predictions)
@@ -108,15 +107,18 @@ class ModelTrainer():
         recov_pred = self.model(batch, batch.batch)
         if self.predict_graph:
             recovered = batch.trace_lat
+            node_names = batch.first_node
         else:
             recovered = batch.y
-        loss = torch.sqrt(loss_fn(recov_pred, recovered))
+            node_names = batch.node_names
+        loss = loss_fn(recov_pred, recovered)
         if self.validate_on_trace:
             edge_index = batch.edge_index
             batch_nodes = batch.batch
             batch_edge = batch_nodes[edge_index[0]]
             recovered, recov_pred = self.extract_trace_lat(recovered, recov_pred, batch_edge)
-        recovered, recov_pred = self.recover_predictions(recovered, recov_pred, batch)
+            node_names = batch.first_node
+        recovered, recov_pred = self.recover_predictions(recovered, recov_pred, node_names)
         crit = criterion(recov_pred, recovered)
         return recovered, recov_pred, loss, crit
     
@@ -126,29 +128,31 @@ class ModelTrainer():
         recov_pred = recov_pred[last_indices]
         return recovered, recov_pred
     
-    def recover_predictions(self, recovered, recov_pred, batch):
+    def recover_predictions(self, recovered, recov_pred, node_names):
+        if 'latency' in self.normalize_by_node_features:
+            recovered = recover_by_node(recovered, node_names, self.measures['norm_by_node'])
+            recov_pred = recover_by_node(recov_pred, node_names, self.measures['norm_by_node'])
         if 'latency' in self.normalize_features:
-            recovered = recover(recovered, self.measures[0], self.measures[1])
-            recov_pred = recover(recov_pred, self.measures[0], self.measures[1])
-        elif 'latency' in self.normalize_by_node_features:
-            recovered = recover_by_node(recovered, batch.node_names, self.measures)
-            recov_pred = recover_by_node(recov_pred, batch.node_names, self.measures)
-        elif 'latency' in self.scale_features:
-            recovered = recover_value(recovered, self.measures[0], self.measures[1])
-            recov_pred = recover_value(recov_pred, self.measures[0], self.measures[1])
+            recovered = recover(recovered, self.measures['norm'][0], self.measures['norm'][1])
+            recov_pred = recover(recov_pred, self.measures['norm'][0], self.measures['norm'][1])
+        if 'latency' in self.scale_features:
+            recovered = recover_value(recovered, self.measures['scale'][0], self.measures['scale'][1])
+            recov_pred = recover_value(recov_pred, self.measures['scale'][0], self.measures['scale'][1])
         return recovered, recov_pred
     
     def predict(self, graph_idx):
         graph = self.graphs[graph_idx]
         if self.predict_graph:
             recovered = graph.trace_lat
+            node_names = [graph.first_node]
         else:
             recovered = graph.y
+            node_names = [graph.node_names]
             
         with torch.no_grad():
             recov_pred = self.model(graph, torch.zeros(graph.x.size(0), dtype=torch.int64))
             
-        recovered, recov_pred = self.recover_predictions(recovered, recov_pred, [graph])
+        recovered, recov_pred = self.recover_predictions(recovered, recov_pred, node_names)
         
         print("*************Prediction*************")
         print(recov_pred)
@@ -276,11 +280,11 @@ def predict(model, graph, measures, recov = False, recov_by_node = False, recov_
 def percentile_mape(target, predictions):
     p = percentiles(target,predictions)
     
-    m_25 = MAPE(torch.tensor(p[25]['x']),torch.tensor(p[25]['y']))
-    m_50 = MAPE(torch.tensor(p[50]['x']),torch.tensor(p[50]['y']))
-    m_75 = MAPE(torch.tensor(p[75]['x']),torch.tensor(p[75]['y']))
-    m_90 = MAPE(torch.tensor(p[90]['x']),torch.tensor(p[90]['y']))
-    m_100 = MAPE(torch.tensor(p[100]['x']),torch.tensor(p[100]['y']))
+    m_25 = MAPE(torch.tensor(p[25]['y']),torch.tensor(p[25]['x']))
+    m_50 = MAPE(torch.tensor(p[50]['y']),torch.tensor(p[50]['x']))
+    m_75 = MAPE(torch.tensor(p[75]['y']),torch.tensor(p[75]['x']))
+    m_90 = MAPE(torch.tensor(p[90]['y']),torch.tensor(p[90]['x']))
+    m_100 = MAPE(torch.tensor(p[100]['y']),torch.tensor(p[100]['x']))
     
     return {25: m_25, 50: m_50, 75: m_75, 90: m_90, 100:m_100}
     
@@ -344,8 +348,8 @@ def plot_figure(i, p, u_l):
     plt.plot([0, max_val], [0, max_val], color='red', linestyle='--', label='y=x')
     plt.show()
 
-def MAPE(target, output):
-    return torch.mean((target - output).abs() / target.abs())
+def MAPE(output, target):
+    return torch.mean(((target + 0.0000001) - (output + 0.0000001)).abs() / (target.abs() + 0.0000001))
 
 def RRMSE(output, target):
     target[target==0] = 1
