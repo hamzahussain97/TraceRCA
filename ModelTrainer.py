@@ -111,7 +111,7 @@ class ModelTrainer():
         else:
             recovered = batch.y
             node_names = batch.node_names
-        loss = loss_fn(recov_pred, recovered)
+        loss = torch.sqrt(loss_fn(recov_pred, recovered))
         if self.validate_on_trace:
             edge_index = batch.edge_index
             batch_nodes = batch.batch
@@ -123,7 +123,8 @@ class ModelTrainer():
         return recovered, recov_pred, loss, crit
     
     def extract_trace_lat(self, recovered, recov_pred, batch):
-        last_indices = torch.bincount(batch) - 1
+        last_indices = torch.bincount(batch)
+        last_indices = torch.cumsum(last_indices, dim=0) - 1
         recovered = recovered[last_indices]
         recov_pred = recov_pred[last_indices]
         return recovered, recov_pred
@@ -297,6 +298,7 @@ def percentiles(x,y):
     percentile_75 = np.percentile(x, 75)
     percentile_90 = np.percentile(x, 90)
     
+    index_10 = np.where((x < percentile_10))[0]
     index_25 = np.where((x > percentile_10) & (x <= percentile_25))[0]
     index_50 = np.where((x > percentile_25) & (x <= percentile_50))[0]
     index_75 = np.where((x > percentile_50) & (x <= percentile_75))[0]
@@ -309,6 +311,7 @@ def percentiles(x,y):
     y_25 = y[index_25]
     p_25 = {'x': x_25, 'y': y_25}
     percentiles[25] = p_25
+    
     
     x_50 = x[index_50]
     y_50 = y[index_50]
