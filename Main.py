@@ -18,7 +18,7 @@ warnings.filterwarnings('ignore')
 trainer_text = """
 ###############################################################################
 ########### NodeGNNGRU Model to predict graph. Loss fn MSE         ############
-########### Target scaled using log and truncated between 0,1      ############
+########### Target normalized by node                              ############
 ###############################################################################
 """
 print(trainer_text)
@@ -27,19 +27,19 @@ print(trainer_text)
 
 data_dir = './A/microservice/test/'
 batch_size = 128
-predict_graph = True
+predict_graph = False
 one_hot_enc = False
 normalize_features = ['cpu_use', 'mem_use_percent', 'net_send_rate', 'net_receive_rate']
-normalize_by_node_features = ['cpu_use', 'mem_use_percent', 'net_send_rate', 'net_receive_rate']
-scale_features = ['latency']
-validate_on_trace = False
+normalize_by_node_features = ['cpu_use', 'mem_use_percent', 'net_send_rate', 'net_receive_rate', 'latency']
+scale_features = []
+validate_on_trace = True
 model_trainer = ModelTrainer(data_dir, batch_size, predict_graph, one_hot_enc=one_hot_enc,\
                              normalize_features=normalize_features,\
                              normalize_by_node_features=normalize_by_node_features,\
                              scale_features=scale_features, validate_on_trace=validate_on_trace)
 
 # Initialize the model
-input_dim = len(normalize_features) + len(normalize_by_node_features)
+input_dim = len(normalize_features) + len(normalize_by_node_features) - 1
 hidden_dim = 128
 vocab_size = len(model_trainer.global_map)
 node_embedding_size = 5
@@ -50,7 +50,7 @@ model = EmbNodeGNNGRU(input_dim, hidden_dim, vocab_size, node_embedding_size, ou
 model_trainer.set_model(model)
 
 # Define Loss functions and optimizer
-epochs = 50
+epochs = 2
 loss = torch.nn.MSELoss(reduction='mean')
 criterion = torch.nn.L1Loss(reduction='mean')
 optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
@@ -61,13 +61,13 @@ model_trainer.predict(graph_idx=0)
 trainer_text = """
 ###############################################################################
 ########### NodeGNNGRU Model to predict graph. Loss fn MAPE        ############
-########### Target scaled using log and truncated between 0,1      ############
+########### Target normalized by node                              ############
 ###############################################################################
 """
 print(trainer_text)
 
 # Initialize the model
-input_dim = len(normalize_features) + len(normalize_by_node_features)
+input_dim = len(normalize_features) + len(normalize_by_node_features) - 1
 hidden_dim = 128
 vocab_size = len(model_trainer.global_map)
 node_embedding_size = 5
@@ -88,13 +88,13 @@ model_trainer.predict(graph_idx=0)
 trainer_text = """
 ###############################################################################
 ########### EdgeGNNGRU Model to predict graph. Loss fn MSE         ############
-########### Target scaled using log and truncated between 0,1      ############
+########### Target normalized by node                              ############
 ###############################################################################
 """
 print(trainer_text)
 
 # Initialize the model
-input_dim = len(normalize_features) + len(normalize_by_node_features)
+input_dim = len(normalize_features) + len(normalize_by_node_features) - 1
 hidden_dim = 128
 vocab_size = len(model_trainer.global_map)
 node_embedding_size = 5
@@ -115,13 +115,13 @@ model_trainer.predict(graph_idx=0)
 trainer_text = """
 ###############################################################################
 ########### EdgeGNNGRU Model to predict graph. Loss fn MAPE        ############
-########### Target scaled using log and truncated between 0,1      ############
+########### Target normalized by node                              ############
 ###############################################################################
 """
 print(trainer_text)
 
 # Initialize the model
-input_dim = len(normalize_features) + len(normalize_by_node_features)
+input_dim = len(normalize_features) + len(normalize_by_node_features) - 1
 hidden_dim = 128
 vocab_size = len(model_trainer.global_map)
 node_embedding_size = 5
