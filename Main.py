@@ -29,8 +29,8 @@ data_dir = './A/microservice/test/'
 batch_size = 128
 predict_graph = False
 one_hot_enc = False
-normalize_features = []
-normalize_by_node_features = ['cpu_use', 'mem_use_percent', 'net_send_rate', 'net_receive_rate']
+normalize_features = ['cpu_use', 'mem_use_percent', 'mem_use_amount', 'net_send_rate', 'net_receive_rate', 'file_read_rate', 'file_write_rate']
+normalize_by_node_features = ['cpu_use', 'mem_use_percent', 'mem_use_amount', 'net_send_rate', 'net_receive_rate', 'file_read_rate', 'file_write_rate']
 scale_features = ['latency']
 validate_on_trace = True
 model_trainer = ModelTrainer(data_dir, batch_size, predict_graph, one_hot_enc=one_hot_enc,\
@@ -39,10 +39,10 @@ model_trainer = ModelTrainer(data_dir, batch_size, predict_graph, one_hot_enc=on
                              scale_features=scale_features, validate_on_trace=validate_on_trace)
 
 # Initialize the model
-input_dim = len(normalize_by_node_features)
+input_dim = len(normalize_features) + len(normalize_by_node_features)
 hidden_dim = 128
 vocab_size = len(model_trainer.global_map)
-node_embedding_size = 5
+node_embedding_size = 10
 output_dim = 1  # Assuming binary classification
 
 model = EmbNodeGNNGRU(input_dim, hidden_dim, vocab_size, node_embedding_size, output_dim,\
@@ -50,10 +50,10 @@ model = EmbNodeGNNGRU(input_dim, hidden_dim, vocab_size, node_embedding_size, ou
 model_trainer.set_model(model)
 
 # Define Loss functions and optimizer
-epochs = 2
+epochs = 100
 loss = torch.nn.MSELoss(reduction='mean')
 criterion = torch.nn.L1Loss(reduction='mean')
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
 model = model_trainer.train(epochs, loss, criterion, optimizer)
 
 model_trainer.predict(graph_idx=0)
@@ -67,10 +67,10 @@ trainer_text = """
 print(trainer_text)
 
 # Initialize the model
-input_dim = len(normalize_by_node_features)
+input_dim = len(normalize_features) + len(normalize_by_node_features)
 hidden_dim = 128
 vocab_size = len(model_trainer.global_map)
-node_embedding_size = 5
+node_embedding_size = 10
 output_dim = 1  # Assuming binary classification
 
 model = EmbEdgeGNNGRU(input_dim, hidden_dim, vocab_size, node_embedding_size, output_dim,\

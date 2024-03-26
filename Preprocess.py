@@ -93,8 +93,11 @@ def order_data(data_row):
     data_row['s_t'] = [data_row['s_t'][i] for i in sorted_indices]
     data_row['cpu_use'] = [data_row['cpu_use'][i] for i in sorted_indices]
     data_row['mem_use_percent'] = [data_row['mem_use_percent'][i] for i in sorted_indices]
+    data_row['mem_use_amount'] = [data_row['mem_use_amount'][i] for i in sorted_indices]
     data_row['net_send_rate'] = [data_row['net_send_rate'][i] for i in sorted_indices]
     data_row['net_receive_rate'] = [data_row['net_receive_rate'][i] for i in sorted_indices]
+    data_row['file_read_rate'] = [data_row['file_read_rate'][i] for i in sorted_indices]
+    data_row['file_write_rate'] = [data_row['file_write_rate'][i] for i in sorted_indices]
     return data_row
 
 def stamps_to_time(stamps):
@@ -215,6 +218,7 @@ def normalize(data, column):
 
 def centre(values, mean, std):
     centred_values = []
+    if std == 0: std=1
     for value in values:
         centred_values = centred_values + [(value - mean) / std]
     return centred_values
@@ -242,9 +246,12 @@ def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = [
     
     nodes = {'cpu_use': trace['cpu_use'], \
              'mem_use_percent': trace['mem_use_percent'],
+             'mem_use_amount': trace['mem_use_amount'],
              'net_send_rate': trace['net_send_rate'],
-             'net_receive_rate': trace['net_receive_rate']}
-    nodes = {}
+             'net_receive_rate': trace['net_receive_rate'],
+             'file_read_rate': trace['file_read_rate'],
+             'file_write_rate': trace['file_write_rate']}
+
     for feature in normalize_by_node_features:
         if feature != 'latency':
             nodes[feature+'_normalized'] = trace[feature+'_normalized']
