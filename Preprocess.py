@@ -41,6 +41,7 @@ def prepare_data(path, normalize_features= [], normalize_by_node_features = [], 
         df = pd.DataFrame(file_data)
         df['original_latency'] = df['latency']
         df = df.apply(lambda row: order_data(row), axis=1)
+        #df = df[df['max_latency'] <= 200000]
         #df['starttime'] = df.apply(lambda row: get_start_times(row['timestamp'], row['latency']), axis=1)
         df['timestamp'] = df['timestamp'].apply(lambda stamps: stamps_to_time(stamps))
         df['latency'] = df['latency'].apply(lambda latencies: micro_to_mili(latencies))
@@ -88,7 +89,7 @@ def order_data(data_row):
     latencies = data_row['latency']
     sorted_indices = sorted(range(len(latencies)), key=lambda i: latencies[i])
     data_row['latency'] = [data_row['latency'][i] for i in sorted_indices]
-    #data_row['original_latency'] = [data_row['original_latency'][i] for i in sorted_indices]
+    data_row['max_latency'] = data_row['latency'][-1]
     data_row['s_t'] = [data_row['s_t'][i] for i in sorted_indices]
     data_row['cpu_use'] = [data_row['cpu_use'][i] for i in sorted_indices]
     data_row['mem_use_percent'] = [data_row['mem_use_percent'][i] for i in sorted_indices]
@@ -122,8 +123,8 @@ def scale_values(values, maximum, minimum):
     maximum = np.log10(maximum)
     minimum = np.log10(minimum)
     for value in values:
-        value = np.log10(value)
-        scaled_value = (value - minimum) / (maximum-minimum)
+        scaled_value = np.log10(value)
+        scaled_value = (scaled_value - minimum) / (maximum-minimum)
         scaled_values = scaled_values + [scaled_value]
     return scaled_values
 
@@ -238,11 +239,12 @@ def prepare_global_map(data):
     return global_map
 
 def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = []):
+    
     nodes = {'cpu_use': trace['cpu_use'], \
              'mem_use_percent': trace['mem_use_percent'],
              'net_send_rate': trace['net_send_rate'],
              'net_receive_rate': trace['net_receive_rate']}
-  
+    nodes = {}
     for feature in normalize_by_node_features:
         if feature != 'latency':
             nodes[feature+'_normalized'] = trace[feature+'_normalized']

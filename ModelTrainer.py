@@ -99,6 +99,9 @@ class ModelTrainer():
             print(f"Epoch: {epoch}/{epochs}, Train Loss: {train_loss:.4f}, Train criterion: {train_crit:.4f}, Val Loss: {val_loss:.4f}, Val criterion: {val_crit:.4f}, Val MAPE: {mape:.4f}, Exp Var: {e_var:.4f}")
             p_mape = percentile_mape(target, predictions)
             print(f"MAPE by percentiles: {', '.join(f'{tensor.item():.4f}' for tensor in p_mape.values())}")
+            p_mae = percentile_mae(target, predictions)
+            print(f"MAE by percentiles: {', '.join(f'{tensor.item():.4f}' for tensor in p_mae.values())}")
+            print("\n")
             if epoch == epochs: 
                 plot(target, predictions)
         return self.model
@@ -288,7 +291,18 @@ def percentile_mape(target, predictions):
     m_100 = MAPE(torch.tensor(p[100]['y']),torch.tensor(p[100]['x']))
     
     return {25: m_25, 50: m_50, 75: m_75, 90: m_90, 100:m_100}
+
+def percentile_mae(target, predictions):
+    p = percentiles(target,predictions)
     
+    m_25 = MAE(torch.tensor(p[25]['y']),torch.tensor(p[25]['x']))
+    m_50 = MAE(torch.tensor(p[50]['y']),torch.tensor(p[50]['x']))
+    m_75 = MAE(torch.tensor(p[75]['y']),torch.tensor(p[75]['x']))
+    m_90 = MAE(torch.tensor(p[90]['y']),torch.tensor(p[90]['x']))
+    m_100 = MAE(torch.tensor(p[100]['y']),torch.tensor(p[100]['x']))
+    
+    return {25: m_25, 50: m_50, 75: m_75, 90: m_90, 100:m_100}
+
 def percentiles(x,y):
     x = x.numpy()
     y = y.numpy()
@@ -363,6 +377,10 @@ def MBE(output, target):
     SE = torch.mean(output - target)
     return SE
 
+def MAE(output, target):
+    criterion = torch.nn.L1Loss(reduction='mean')
+    MAE = criterion(output, target)
+    return MAE
 '''
 if __name__ == "__main__":
     data, measures, global_map, loaders = prepare_data(batch_size=128, one_hot_enc=True)
