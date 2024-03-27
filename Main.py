@@ -27,12 +27,12 @@ print(trainer_text)
 
 data_dir = './A/microservice/test/'
 batch_size = 128
-predict_graph = True
+predict_graph = False
 one_hot_enc = False
 normalize_features = []
-normalize_by_node_features = []
-scale_features = ['cpu_use', 'mem_use_percent', 'mem_use_amount', 'latency', 'net_send_rate', 'net_receive_rate', 'file_read_rate']
-validate_on_trace = False
+normalize_by_node_features = ['latency']
+scale_features = ['cpu_use', 'mem_use_percent', 'mem_use_amount', 'net_send_rate', 'net_receive_rate', 'file_read_rate']
+validate_on_trace = True
 model_trainer = ModelTrainer(data_dir, batch_size, predict_graph, one_hot_enc=one_hot_enc,\
                              normalize_features=normalize_features,\
                              normalize_by_node_features=normalize_by_node_features,\

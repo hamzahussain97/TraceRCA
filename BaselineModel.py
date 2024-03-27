@@ -168,7 +168,7 @@ class EmbEdgeGNNGRU(torch.nn.Module):
         # Start decoding
         batch_edge = batch[edge_index[0]]
         row, col = edge_index
-        x = (x[row] + x[col]) / 2
+        x = (x[row] + x[col])
         #Construct GRU Input
         gru_input, mask, max_edges = construct_tensor(x, batch_edge)
         # Initialize hidden states

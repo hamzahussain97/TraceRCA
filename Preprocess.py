@@ -41,7 +41,7 @@ def prepare_data(path, normalize_features= [], normalize_by_node_features = [], 
         df = pd.DataFrame(file_data)
         df['original_latency'] = df['latency']
         df = df.apply(lambda row: order_data(row), axis=1)
-        df = df[df['max_latency'] >= 200000]
+        #df = df[df['max_latency'] >= 150000]
         #df['starttime'] = df.apply(lambda row: get_start_times(row['timestamp'], row['latency']), axis=1)
         df['timestamp'] = df['timestamp'].apply(lambda stamps: stamps_to_time(stamps))
         df['latency'] = df['latency'].apply(lambda latencies: micro_to_mili(latencies))
@@ -300,7 +300,7 @@ def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = [
         # Append zero_df to the bottom of nodes DataFrame
         nodes = pd.concat([nodes, zero_df])
 
-    nodes = nodes.groupby('node_name').sum().reset_index()
+    nodes = nodes.groupby('node_name').mean().reset_index()
     node_name_column = nodes.pop('node_name')  # Remove 'node_name' from the DataFrame
     nodes['node_name'] = node_name_column  # Add 'node_name' as the last column
     nodes = nodes.reset_index(drop=True)
