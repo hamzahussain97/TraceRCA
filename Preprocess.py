@@ -121,20 +121,27 @@ def scale(data, column):
     data[column] = data[column].apply(lambda row: scale_values(row, maximum, minimum))
     return data, maximum, minimum
 
+def log(value):
+    if value != 0:
+        scaled_value = np.log10(value)
+    else:
+        scaled_value = 0
+    return scaled_value
+
 def scale_values(values, maximum, minimum):
     scaled_values = []
-    maximum = np.log10(maximum)
-    minimum = np.log10(minimum)
+    maximum = log(maximum)
+    minimum = log(minimum)
     for value in values:
-        scaled_value = np.log10(value)
+        scaled_value = log(value)
         scaled_value = (scaled_value - minimum) / (maximum-minimum)
         scaled_values = scaled_values + [scaled_value]
     return scaled_values
 
 def recover_value(values, maximum, minimum):
     recovered_values = []
-    maximum = np.log10(maximum)
-    minimum = np.log10(minimum)
+    maximum = log(maximum)
+    minimum = log(minimum)
     #recovered_values = inv_boxcox(values, maximum)
     for value in values:
         value = ((maximum - minimum) * value) + minimum
@@ -251,6 +258,7 @@ def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = [
              'net_receive_rate': trace['net_receive_rate'],
              'file_read_rate': trace['file_read_rate'],
              'file_write_rate': trace['file_write_rate']}
+        
 
     for feature in normalize_by_node_features:
         if feature != 'latency':
