@@ -41,7 +41,7 @@ def prepare_data(path, normalize_features= [], normalize_by_node_features = [], 
         df = pd.DataFrame(file_data)
         df['original_latency'] = df['latency']
         df = df.apply(lambda row: order_data(row), axis=1)
-        #df = df[df['max_latency'] <= 200000]
+        df = df[df['max_latency'] >= 200000]
         #df['starttime'] = df.apply(lambda row: get_start_times(row['timestamp'], row['latency']), axis=1)
         df['timestamp'] = df['timestamp'].apply(lambda stamps: stamps_to_time(stamps))
         df['latency'] = df['latency'].apply(lambda latencies: micro_to_mili(latencies))
@@ -89,6 +89,7 @@ def order_data(data_row):
     latencies = data_row['latency']
     sorted_indices = sorted(range(len(latencies)), key=lambda i: latencies[i])
     data_row['latency'] = [data_row['latency'][i] for i in sorted_indices]
+    data_row['original_latency'] = [data_row['original_latency'][i] for i in sorted_indices]
     data_row['max_latency'] = data_row['latency'][-1]
     data_row['s_t'] = [data_row['s_t'][i] for i in sorted_indices]
     data_row['cpu_use'] = [data_row['cpu_use'][i] for i in sorted_indices]
@@ -299,7 +300,9 @@ def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = [
         # Append zero_df to the bottom of nodes DataFrame
         nodes = pd.concat([nodes, zero_df])
 
-    nodes = nodes.drop_duplicates(subset='node_name')
+    nodes = nodes.groupby('node_name').sum().reset_index()
+    node_name_column = nodes.pop('node_name')  # Remove 'node_name' from the DataFrame
+    nodes['node_name'] = node_name_column  # Add 'node_name' as the last column
     nodes = nodes.reset_index(drop=True)
     
     #Map node names to integers
@@ -333,6 +336,7 @@ def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = [
     graph = Data(x=nodes_tensor, edge_index=edges_tensor, y=y_edge_tensor, trace_lat=trace_lat_tensor)
     graph.node_names = node_names
     graph.first_node = node_names[-1:]
+
     return graph
 
 def preprocess(path, one_hot_enc = False, normalize_features = [], normalize_by_node_features = [], scale_features = []):
