@@ -159,7 +159,7 @@ def normalize_by_node(data, column):
     df_edges = data['s_t'].explode('s_t')
     nodes = df_edges.apply(lambda x: x[1])
     
-    values['node_name'] = nodes
+    values['node_name'] = df_edges
     
     print("\n********************************")
     print("***Normalizing " + column + " by node***")
@@ -170,6 +170,10 @@ def normalize_by_node(data, column):
 
     # Rename the columns for clarity
     result.columns = ['average', 'std_dev']
+    
+    result = pd.DataFrame(result)
+    result.index = pd.MultiIndex.from_tuples(result.index)
+
 
     # If you want to reset the index and have 'node_name' as a regular column:
     #result.reset_index(inplace=True)
@@ -184,8 +188,8 @@ def normalize_by_node(data, column):
 def centre_by_node(values, nodes, measures):
     centred_values = []
     for (value, node) in zip(values, nodes):
-        mean = measures.loc[node[1], 'average']
-        std = measures.loc[node[1], 'std_dev']
+        mean = measures.loc[node, 'average']
+        std = measures.loc[node, 'std_dev']
         centred_value = [(value - mean) / std]
         centred_values = centred_values + centred_value
     return centred_values
@@ -269,7 +273,8 @@ def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = [
 
     #Create dataframe of edges
     edges = pd.DataFrame(trace['s_t'], columns = ['source', 'target'])
-
+    nedges = pd.DataFrame({'edges': trace['s_t']})['edges']
+    
     #Assume that the metrics belong to the target node in the edge. Store the 
     #node name of the target with the metrics
     nodes['node_name'] = edges['target']
@@ -334,8 +339,8 @@ def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = [
     y_edge_tensor = torch.tensor(y_edge_features.values, dtype=torch.float32).squeeze(dim=1)
     trace_lat_tensor = torch.tensor(trace_lat, dtype=torch.float32)
     graph = Data(x=nodes_tensor, edge_index=edges_tensor, y=y_edge_tensor, trace_lat=trace_lat_tensor)
-    graph.node_names = node_names
-    graph.first_node = node_names[-1:]
+    graph.node_names = nedges
+    graph.first_node = nedges[-1:]
 
     return graph
 
