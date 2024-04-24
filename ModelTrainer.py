@@ -419,7 +419,7 @@ def plot_figure(i, p, u_l):
     plt.show()
 
 def MAPE(output, target):
-    return torch.mean(((target + 0.0000001) - (output + 0.0000001)).abs() / (target.abs() + 0.0000001))
+    return torch.mean(((target) - (output)).abs() / (target.abs()))
 
 def RRMSE(output, target):
     target[target==0] = 1

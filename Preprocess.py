@@ -26,7 +26,7 @@ from torch_geometric.utils import to_networkx
 def prepare_data(path, normalize_features= [], normalize_by_node_features = [], scale_features = []):
     data = pd.DataFrame()
     data_dir = Path(path)
-    file_list = list(map(str, data_dir.glob("*admin-order_abort_1011.pkl")))
+    file_list = list(map(str, data_dir.glob("*1015.pkl")))
     '''
     ##################################################
     print("\n***********File List************")
@@ -56,7 +56,7 @@ def prepare_data(path, normalize_features= [], normalize_by_node_features = [], 
     print(counts)
     print("*****************************************\n")
     ##################################################
-    data = data[data['label'] != 1]
+    #data = data[data['label'] != 1]
     
     counts = data['label'].value_counts()
     ##################################################
@@ -77,6 +77,7 @@ def prepare_data(path, normalize_features= [], normalize_by_node_features = [], 
     #stats.fillna(0, inplace=True)
     #data = data.groupby('trace_integer').apply(normalize_cluster)
     data = data.reset_index()
+    data.drop(columns=['index'])
     data, stats = normalize_by_trace(data)
     transformation_features = normalize_by_node_features + normalize_features + scale_features
     for feature in transformation_features:
@@ -115,7 +116,7 @@ def normalize_by_trace(data):
     values = data.apply(pd.Series.explode)
         
     print("\n********************************")
-    print("***Normalizing latency by node***")
+    print("***Normalizing latency by trace***")
     print("********************************\n")
    
     # Group by 'node_name' and calculate mean and std of column values
@@ -130,8 +131,12 @@ def normalize_by_trace(data):
     result.fillna(0, inplace=True)
     
     values = values.groupby(['trace_integer', 's_t']).apply(normalize_cluster, column='latency')
+    values = values.reset_index()
+    values = values.drop(columns=['level_0'])
+    print("Grouping by trace_id")
     values = values.groupby(['trace_id', 'trace_integer']).agg(lambda x: x.tolist())
     values = values.reset_index()
+    print("Ordering rows")
     values = values.apply(lambda row: order_data(row), axis=1)
     return values, result
 
