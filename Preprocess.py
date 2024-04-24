@@ -14,6 +14,8 @@ from tqdm import tqdm
 import torch
 from torch_geometric.data import Data
 import math
+import torch_geometric.transforms as T
+
 import matplotlib.pyplot as plt
 import networkx as nx
 from scipy.stats import boxcox
@@ -35,16 +37,17 @@ def prepare_data(path, normalize_features= [], normalize_by_node_features = [], 
     print("\n********************************")
     print("*********Loading Files**********")
     print("********************************\n")
+    trace_to_integer = {}
     for data_file in tqdm(file_list):
         with open(data_file, 'rb') as file:
             file_data = pickle.load(file)
         df = pd.DataFrame(file_data)
         df['original_latency'] = df['latency']
-        df = df.apply(lambda row: order_data(row), axis=1)
+        df['latency'] = df['latency'].apply(lambda latencies: micro_to_mili(latencies))
         #df = df[df['max_latency'] >= 150000]
         #df['starttime'] = df.apply(lambda row: get_start_times(row['timestamp'], row['latency']), axis=1)
         df['timestamp'] = df['timestamp'].apply(lambda stamps: stamps_to_time(stamps))
-        df['latency'] = df['latency'].apply(lambda latencies: micro_to_mili(latencies))
+        df['trace_integer'] = df.apply(lambda row: get_trace_integer(row, trace_to_integer), axis=1)
         data = pd.concat([data,df])
     
     counts = data['label'].value_counts()
@@ -69,6 +72,12 @@ def prepare_data(path, normalize_features= [], normalize_by_node_features = [], 
                 '6b479c5de1a70eb50b1ea151c93b6181']
     data = data[~data['trace_id'].isin(outliers)]
     measures = {}
+    # Apply the normalization function to each group based on trace_integer
+    #stats = data.groupby('trace_integer')['max_latency'].agg(['mean', 'std'])
+    #stats.fillna(0, inplace=True)
+    #data = data.groupby('trace_integer').apply(normalize_cluster)
+    data = data.reset_index()
+    data, stats = normalize_by_trace(data)
     transformation_features = normalize_by_node_features + normalize_features + scale_features
     for feature in transformation_features:
         measures[feature] = {}
@@ -81,7 +90,8 @@ def prepare_data(path, normalize_features= [], normalize_by_node_features = [], 
     for feature in normalize_features:
         data, feature_mean, feature_std = normalize(data, feature)
         measures[feature]['norm'] = [feature_mean, feature_std]
-    
+    measures['latency'] = {}
+    measures['latency']['norm_by_trace'] = stats
     global_map = prepare_global_map(data)
     return data, global_map, measures
 
@@ -100,6 +110,66 @@ def order_data(data_row):
     data_row['file_read_rate'] = [data_row['file_read_rate'][i] for i in sorted_indices]
     data_row['file_write_rate'] = [data_row['file_write_rate'][i] for i in sorted_indices]
     return data_row
+
+def normalize_by_trace(data):    
+    values = data.apply(pd.Series.explode)
+        
+    print("\n********************************")
+    print("***Normalizing latency by node***")
+    print("********************************\n")
+   
+    # Group by 'node_name' and calculate mean and std of column values
+    result = values.groupby(['trace_integer', 's_t'])['latency'].agg(['mean', 'std'])
+    result = result.reset_index()
+    result[['source', 'target']] = result['s_t'].apply(pd.Series)
+    result.drop(columns=['s_t'], inplace=True)
+    result.set_index(['trace_integer', 'source', 'target'], inplace=True)
+
+    # If you want to reset the index and have 'node_name' as a regular column:
+    #result.reset_index(inplace=True)
+    result.fillna(0, inplace=True)
+    
+    values = values.groupby(['trace_integer', 's_t']).apply(normalize_cluster, column='latency')
+    values = values.groupby(['trace_id', 'trace_integer']).agg(lambda x: x.tolist())
+    values = values.reset_index()
+    values = values.apply(lambda row: order_data(row), axis=1)
+    return values, result
+
+def normalize_cluster(cluster, column):
+    std = cluster[column].std()
+    if std == 0 or np.isnan(std):
+        cluster[column] = 0
+    else:
+        cluster[column] = (cluster[column] - cluster[column].mean()) / cluster[column].std()
+    return cluster
+
+def recover_by_trace(values, trace_integers, edges, measures):
+    recovered_values = []
+    edges = pd.concat(edges).reset_index(drop=True)
+    for (value, trace_integer, edge) in zip(values, trace_integers, edges):
+        mean = measures.loc[(trace_integer.item(), edge[0], edge[1]), 'mean']
+        std = measures.loc[(trace_integer.item(), edge[0], edge[1]), 'std']
+        recovered_value = [(value * std) + mean]
+        recovered_values = recovered_values + [recovered_value]
+    return torch.tensor(recovered_values, dtype=torch.float32)
+
+def recover_by_cluster(values, trace_integers, measures):
+    recovered_values = []
+    for (value, trace_integer) in zip(values, trace_integers):
+        mean = measures.loc[trace_integer.item(), 'mean']
+        std = measures.loc[trace_integer.item(), 'std']
+        recovered_value = [(value * std) + mean]
+        recovered_values = recovered_values + [recovered_value]
+    return torch.tensor(recovered_values, dtype=torch.float32)
+
+def get_trace_integer(row, trace_to_integer):
+    s_t = row['s_t']
+    trace = frozenset(s_t)
+    if trace not in trace_to_integer:
+        next_integer = max(trace_to_integer.values()) + 1 if trace_to_integer else 0
+        trace_to_integer[trace] = next_integer
+        next_integer += 1
+    return trace_to_integer[trace]
 
 def stamps_to_time(stamps):
     time = []
@@ -151,6 +221,37 @@ def recover_value(values, maximum, minimum):
     
     return torch.tensor(recovered_values, dtype=torch.float32)
 
+def normalize_by_edge(data):
+    values = pd.DataFrame()
+    filtered_data = data[['latency', 's_t']].copy()
+    
+    values['latency'] = data['latency'].explode('latency')
+    df_edges = data['s_t'].explode('s_t')
+    
+    values['node_name'] = df_edges
+    
+    print("\n********************************")
+    print("***Normalizing latency by node***")
+    print("********************************\n")
+   
+    # Group by 'node_name' and calculate mean and std of column values
+    result = values.groupby('node_name')['latency'].agg(['mean', 'std'])
+
+    # Rename the columns for clarity
+    result.columns = ['average', 'std_dev']
+    
+    result = pd.DataFrame(result)
+    result.index = pd.MultiIndex.from_tuples(result.index)
+
+
+    # If you want to reset the index and have 'node_name' as a regular column:
+    #result.reset_index(inplace=True)
+    result.fillna(1, inplace=True)
+    result['std_dev'].replace(0,1, inplace=True)
+    data['latency'] = filtered_data.progress_apply(lambda row: centre_by_node(row['latency'], row['s_t'], result), axis=1)
+    
+    return data, result
+
 def normalize_by_node(data, column):
     values = pd.DataFrame()
     filtered_data = data[[column, 's_t']].copy()
@@ -159,7 +260,10 @@ def normalize_by_node(data, column):
     df_edges = data['s_t'].explode('s_t')
     nodes = df_edges.apply(lambda x: x[1])
     
-    values['node_name'] = df_edges
+    if column == 'latency':
+        values['node_name'] = df_edges
+    else:
+        values['node_name'] = nodes
     
     print("\n********************************")
     print("***Normalizing " + column + " by node***")
@@ -172,7 +276,8 @@ def normalize_by_node(data, column):
     result.columns = ['average', 'std_dev']
     
     result = pd.DataFrame(result)
-    result.index = pd.MultiIndex.from_tuples(result.index)
+    if column == 'latency':
+        result.index = pd.MultiIndex.from_tuples(result.index)
 
 
     # If you want to reset the index and have 'node_name' as a regular column:
@@ -188,6 +293,8 @@ def normalize_by_node(data, column):
 def centre_by_node(values, nodes, measures):
     centred_values = []
     for (value, node) in zip(values, nodes):
+        if measures.index.nlevels != 2:
+            node = node[1]
         mean = measures.loc[node, 'average']
         std = measures.loc[node, 'std_dev']
         centred_value = [(value - mean) / std]
@@ -258,11 +365,10 @@ def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = [
     
     nodes = {'cpu_use': trace['cpu_use'], \
              'mem_use_percent': trace['mem_use_percent'],
-             'mem_use_amount': trace['mem_use_amount'],
              'net_send_rate': trace['net_send_rate'],
              'net_receive_rate': trace['net_receive_rate'],
              'file_read_rate': trace['file_read_rate'],
-             'file_write_rate': trace['file_write_rate']}
+             'trace_integer': trace['trace_integer']}
         
 
     for feature in normalize_by_node_features:
@@ -275,6 +381,9 @@ def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = [
     edges = pd.DataFrame(trace['s_t'], columns = ['source', 'target'])
     nedges = pd.DataFrame({'edges': trace['s_t']})['edges']
     
+    trace_integers = [trace['trace_integer']] * len(edges)
+    trace_integer = trace['trace_integer']
+    
     #Assume that the metrics belong to the target node in the edge. Store the 
     #node name of the target with the metrics
     nodes['node_name'] = edges['target']
@@ -282,8 +391,8 @@ def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = [
 
     y_edge_features = {'latency': trace['latency']}
     y_edge_features = pd.DataFrame(y_edge_features)
-    trace_lat = y_edge_features.iloc[-1]
-    
+    #trace_lat = y_edge_features.iloc[-1]
+    trace_lat = trace['max_latency']
     #Find all unique node names
     unique_nodes = pd.concat([edges['source'], edges['target']]).unique()
     
@@ -295,6 +404,7 @@ def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = [
     # Create a DataFrame filled with zeros with the same number of rows as 'not_in_target'
     # and one less column than 'nodes'
         zero_df = pd.DataFrame(0, index=range(len(not_in_target)), columns=nodes.columns[:-1])
+        zero_df['trace_integer'] = trace_integer
         source_df = pd.DataFrame(not_in_target['source'].values, columns=['node_name'])
         
         # Reset the index of zero_df and source_df to align them properly
@@ -332,13 +442,16 @@ def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = [
     
         # Concatenate the one-hot encoded columns with the original DataFrame
         nodes = pd.concat([nodes.drop(columns=['node_name']), one_hot_encoded], axis=1)
+
     
     #Convert to tensors
     nodes_tensor = torch.tensor(nodes.values, dtype=torch.float32)
     edges_tensor = torch.tensor(edges.values, dtype=torch.long).t().contiguous()
     y_edge_tensor = torch.tensor(y_edge_features.values, dtype=torch.float32).squeeze(dim=1)
     trace_lat_tensor = torch.tensor(trace_lat, dtype=torch.float32)
-    graph = Data(x=nodes_tensor, edge_index=edges_tensor, y=y_edge_tensor, trace_lat=trace_lat_tensor)
+    trace_integers_tensor = torch.tensor(trace_integers, dtype=torch.long)
+    trace_integer_tensor = torch.tensor(trace_integer, dtype=torch.long)
+    graph = Data(x=nodes_tensor, edge_index=edges_tensor, edge_attr=trace_integers_tensor, y=y_edge_tensor, trace_lat=trace_lat_tensor, trace_integer=trace_integer_tensor)
     graph.node_names = nedges
     graph.first_node = nedges[-1:]
 
@@ -355,8 +468,8 @@ def preprocess(path, one_hot_enc = False, normalize_features = [], normalize_by_
     return data, graphs, global_map, measures
 
 if __name__ == "__main__":   
-    data, graphs, global_map, measures = preprocess('./A/microservice/test/', one_hot_enc=False, normalize_features=['cpu_use', 'mem_use_percent'], \
-    normalize_by_node_features=['cpu_use', 'mem_use_percent'])
+    data, graphs, global_map, measures = preprocess('./A/microservice/test/', one_hot_enc=False, normalize_features=[], \
+    normalize_by_node_features=[])
     graph = graphs[386]
     #inv_map = inv_maps[386]
     #g = to_networkx(graph, to_undirected=False)
@@ -365,4 +478,3 @@ if __name__ == "__main__":
     #plt.show
     #data['p_latency'] = data['latency']
     #data = data.explode('latency')
-    #visualize(data, 'latency')

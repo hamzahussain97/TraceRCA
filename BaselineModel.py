@@ -7,7 +7,7 @@ Created on Thu Feb 22 10:32:12 2024
 
 import torch
 import torch.nn.functional as F
-from torch_geometric.nn import GCNConv, GraphNorm, global_add_pool, global_mean_pool
+from torch_geometric.nn import GCNConv, GraphConv, GATConv, GraphNorm, global_add_pool, global_mean_pool
 from torch.nn import Embedding, GRU, Parameter
 
 class GNN(torch.nn.Module):
@@ -24,6 +24,10 @@ class GNN(torch.nn.Module):
 
     def forward(self, data, batch):
         x, edge_index = data.x, data.edge_index
+        # Compute the norms of each row
+        norms = torch.norm(x, dim=1, keepdim=True)
+        # Normalize each row
+        x = x.div(norms)
         x = self.conv1(x, edge_index)
         x = F.gelu(x)
         x = self.conv2(x, edge_index)
@@ -64,6 +68,10 @@ class EmbGNN(torch.nn.Module):
         emb_vecs = self.embedding(node_index)
         assert x.shape[0] == emb_vecs.shape[0]
         x = torch.cat((x[:,:-1], emb_vecs), axis=1)
+        # Compute the norms of each row
+        norms = torch.norm(x, dim=1, keepdim=True)
+        # Normalize each row
+        x = x.div(norms)
         x = self.conv1(x, edge_index)
         x = F.gelu(x)
         x = self.conv2(x, edge_index)
@@ -88,9 +96,9 @@ class EmbNodeGNNGRU(torch.nn.Module):
     def __init__(self, input_dim, hidden_dim, vocab_size, embedding_dim, output_dim, predict_graph = True):
         super(EmbNodeGNNGRU, self).__init__()
         self.embedding = Embedding(vocab_size, embedding_dim)
-        self.conv1 = GCNConv(input_dim + embedding_dim, hidden_dim)
-        self.conv2 = GCNConv(hidden_dim, hidden_dim)
-        self.conv3 = GCNConv(hidden_dim, hidden_dim)
+        self.conv1 = GraphConv(input_dim + embedding_dim, hidden_dim)
+        self.conv2 = GraphConv(hidden_dim, hidden_dim)
+        self.conv3 = GraphConv(hidden_dim, hidden_dim)
         self.fc = torch.nn.Linear(hidden_dim, input_dim)
         self.gru_cell = GRU(input_dim, output_dim, batch_first=True)
         self.initial_hs = Parameter(torch.zeros(1, 1), requires_grad=True)
@@ -104,6 +112,10 @@ class EmbNodeGNNGRU(torch.nn.Module):
         emb_vecs = self.embedding(node_index)
         assert x.shape[0] == emb_vecs.shape[0]
         x = torch.cat((x[:,:-1], emb_vecs), axis=1)
+        # Compute the norms of each row
+        norms = torch.norm(x, dim=1, keepdim=True)
+        # Normalize each row
+        x = x.div(norms)
         x = self.conv1(x, edge_index)
         x = F.gelu(x)
         x = self.conv2(x, edge_index)
@@ -142,28 +154,33 @@ class EmbEdgeGNNGRU(torch.nn.Module):
     def __init__(self, input_dim, hidden_dim, vocab_size, embedding_dim, output_dim, predict_graph=True):
         super(EmbEdgeGNNGRU, self).__init__()
         self.embedding = Embedding(vocab_size, embedding_dim)
-        self.conv1 = GCNConv(input_dim + embedding_dim, hidden_dim)
-        self.conv2 = GCNConv(hidden_dim, hidden_dim)
-        self.conv3 = GCNConv(hidden_dim, hidden_dim)
+        self.conv1 = GraphConv(input_dim + embedding_dim, hidden_dim)
+        self.conv2 = GraphConv(hidden_dim, hidden_dim)
+        self.conv3 = GraphConv(hidden_dim, hidden_dim)
         self.fc = torch.nn.Linear(hidden_dim, input_dim)
-        self.gru_cell = GRU(input_dim, output_dim, batch_first=True)
+        self.gru_cell = GRU(hidden_dim, output_dim, batch_first=True)
         self.initial_hs = Parameter(torch.zeros(1, 1), requires_grad=True)
         self.predict_graph = predict_graph
 
     def forward(self, data, batch):
-        x, edge_index = data.x, data.edge_index
+        x, edge_index, edge_attr = data.x, data.edge_index, data.edge_attr
         node_index = x[:,-1].long()
         emb_vecs = self.embedding(node_index)
         assert x.shape[0] == emb_vecs.shape[0]
         x = torch.cat((x[:,:-1], emb_vecs), axis=1)
+        # Compute the norms of each row
+        #norms = torch.norm(x, dim=1, keepdim=True)
+        #norms[norms == 0] = 1e-8
+        # Normalize each row
+        #x = x.div(norms)
         x = self.conv1(x, edge_index)
         x = F.gelu(x)
         x = self.conv2(x, edge_index)
         x = F.gelu(x)
         x = self.conv3(x, edge_index)
         x = F.gelu(x)
-        x = self.fc(x)
-        x = F.gelu(x)
+        #x = self.fc(x)
+        #x = F.gelu(x)
         
         # Start decoding
         batch_edge = batch[edge_index[0]]
@@ -175,7 +192,7 @@ class EmbEdgeGNNGRU(torch.nn.Module):
         hidden_state = self.initial_hs.expand(1, batch_edge.max().item() + 1, 1)
         predictions, hidden_state = self.gru_cell(gru_input, hidden_state)
         # Apply mask to predictions
-        masked_predictions = predictions.squeeze() * mask
+        masked_predictions = predictions.squeeze(dim=2) * mask
         
         if self.predict_graph:
             # Find the index of the last non-zero value in the max_nodes dimension for each sample
@@ -187,7 +204,7 @@ class EmbEdgeGNNGRU(torch.nn.Module):
             selected_predictions = masked_predictions[mask.bool()]
         return selected_predictions
 
-def construct_tensor(x, batch):
+def construct_tensor(x, batch, mean=[]):
     # Find unique values (graphs) and their counts
     unique_values, counts = torch.unique(batch, return_counts=True)
     batch_size = counts.size(0)
