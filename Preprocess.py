@@ -26,7 +26,7 @@ from torch_geometric.utils import to_networkx
 def prepare_data(path, normalize_features= [], normalize_by_node_features = [], scale_features = []):
     data = pd.DataFrame()
     data_dir = Path(path)
-    file_list = list(map(str, data_dir.glob("*1015.pkl")))
+    file_list = list(map(str, data_dir.glob("*admin-order_abort_1011.pkl")))
     '''
     ##################################################
     print("\n***********File List************")
@@ -76,8 +76,7 @@ def prepare_data(path, normalize_features= [], normalize_by_node_features = [], 
     #stats = data.groupby('trace_integer')['max_latency'].agg(['mean', 'std'])
     #stats.fillna(0, inplace=True)
     #data = data.groupby('trace_integer').apply(normalize_cluster)
-    data = data.reset_index()
-    data.drop(columns=['index'])
+    data = data.reset_index(drop=True)
     data, stats = normalize_by_trace(data)
     transformation_features = normalize_by_node_features + normalize_features + scale_features
     for feature in transformation_features:
@@ -131,7 +130,7 @@ def normalize_by_trace(data):
     result.fillna(0, inplace=True)
     
     values = values.groupby(['trace_integer', 's_t']).apply(normalize_cluster, column='latency')
-    values = values.reset_index()
+    values = values.reset_index(drop=True)
     values = values.drop(columns=['level_0'])
     print("Grouping by trace_id")
     values = values.groupby(['trace_id', 'trace_integer']).agg(lambda x: x.tolist())

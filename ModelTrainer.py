@@ -51,12 +51,12 @@ class ModelTrainer():
         val_size = len(dataset) - train_size
         
         # Split the dataset into training and validation sets
-        train_dataset = torch.utils.data.Subset(dataset, range(train_size))
-        val_dataset = torch.utils.data.Subset(dataset, range(train_size, len(dataset)))
-        #train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+        #train_dataset = torch.utils.data.Subset(dataset, range(train_size))
+        #val_dataset = torch.utils.data.Subset(dataset, range(train_size, len(dataset)))
+        train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
         
         # Create DataLoaders for training and validation
-        self.train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False)
+        self.train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
         self.val_loader = DataLoader(val_dataset, batch_size=self.batch_size)
         self.data = data
         self.measures = measures
@@ -160,13 +160,13 @@ class ModelTrainer():
     def predict(self, graph_idx):
         graph = self.graphs[graph_idx]
         if self.predict_graph:
-            recovered = graph.trace_lat
+            recovered = [graph.trace_lat]
             node_names = [graph.first_node]
+            trace_integers = [graph.trace_integer]
         else:
             recovered = graph.y
             node_names = [graph.node_names]
-        
-        trace_integers = graph.edge_attr
+            trace_integers = graph.edge_attr
             
         with torch.no_grad():
             recov_pred = self.model(graph, torch.zeros(graph.x.size(0), dtype=torch.int64))
