@@ -131,7 +131,6 @@ def normalize_by_trace(data):
     
     values = values.groupby(['trace_integer', 's_t']).apply(normalize_cluster, column='latency')
     values = values.reset_index(drop=True)
-    values = values.drop(columns=['level_0'])
     print("Grouping by trace_id")
     values = values.groupby(['trace_id', 'trace_integer']).agg(lambda x: x.tolist())
     values = values.reset_index()
