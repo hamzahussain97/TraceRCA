@@ -122,7 +122,7 @@ class ModelTrainer():
         else:
             recovered = batch.y
             node_names = batch.node_names
-            trace_integers = batch.edge_attr
+            trace_integers = batch.trace_integers
         loss = torch.sqrt(loss_fn(recov_pred, recovered))
         if self.validate_on_trace:
             edge_index = batch.edge_index
@@ -166,7 +166,7 @@ class ModelTrainer():
         else:
             recovered = graph.y
             node_names = [graph.node_names]
-            trace_integers = graph.edge_attr
+            trace_integers = graph.trace_integers
             
         with torch.no_grad():
             recov_pred = self.model(graph, torch.zeros(graph.x.size(0), dtype=torch.int64))
@@ -419,7 +419,11 @@ def plot_figure(i, p, u_l):
     plt.show()
 
 def MAPE(output, target):
-    return torch.mean(((target) - (output)).abs() / (target.abs()))
+    error = target - output
+    abs_error = error.abs()
+    p_error = abs_error / target
+    mape = torch.mean(p_error)
+    return mape
 
 def RRMSE(output, target):
     target[target==0] = 1

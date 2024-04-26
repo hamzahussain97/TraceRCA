@@ -27,7 +27,7 @@ print(trainer_text)
 
 data_dir = './A/microservice/test/'
 batch_size = 128
-predict_graph = True
+predict_graph = False
 one_hot_enc = False
 normalize_features = ['cpu_use', 'mem_use_percent', 'net_send_rate', 'net_receive_rate', 'file_read_rate']
 normalize_by_node_features = ['cpu_use', 'mem_use_percent', 'net_send_rate', 'net_receive_rate', 'file_read_rate']
@@ -40,7 +40,7 @@ model_trainer = ModelTrainer(data_dir, batch_size, predict_graph, one_hot_enc=on
                              scale_features=scale_features, validate_on_trace=validate_on_trace)
 
 # Initialize the model
-input_dim = 11
+input_dim = 10
 hidden_dim = 128
 vocab_size = len(model_trainer.global_map)
 node_embedding_size = 10
@@ -51,7 +51,7 @@ model = EmbEdgeGNNGRU(input_dim, hidden_dim, vocab_size, node_embedding_size, ou
 model_trainer.set_model(model)
 
 # Define Loss functions and optimizer
-epochs = 50
+epochs = 10
 loss = torch.nn.MSELoss(reduction='mean')
 criterion = torch.nn.L1Loss(reduction='mean')
 optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)

@@ -15,7 +15,7 @@ import torch
 from torch_geometric.data import Data
 import math
 import torch_geometric.transforms as T
-
+from scipy.stats import norm
 import matplotlib.pyplot as plt
 import networkx as nx
 from scipy.stats import boxcox
@@ -26,7 +26,7 @@ from torch_geometric.utils import to_networkx
 def prepare_data(path, normalize_features= [], normalize_by_node_features = [], scale_features = []):
     data = pd.DataFrame()
     data_dir = Path(path)
-    file_list = list(map(str, data_dir.glob("*admin-order_abort_1011.pkl")))
+    file_list = list(map(str, data_dir.glob("admin*.pkl")))
     '''
     ##################################################
     print("\n***********File List************")
@@ -48,6 +48,7 @@ def prepare_data(path, normalize_features= [], normalize_by_node_features = [], 
         #df['starttime'] = df.apply(lambda row: get_start_times(row['timestamp'], row['latency']), axis=1)
         df['timestamp'] = df['timestamp'].apply(lambda stamps: stamps_to_time(stamps))
         df['trace_integer'] = df.apply(lambda row: get_trace_integer(row, trace_to_integer), axis=1)
+        #df = df.apply(lambda row: order_data(row), axis=1)
         data = pd.concat([data,df])
     
     counts = data['label'].value_counts()
@@ -56,7 +57,7 @@ def prepare_data(path, normalize_features= [], normalize_by_node_features = [], 
     print(counts)
     print("*****************************************\n")
     ##################################################
-    #data = data[data['label'] != 1]
+    data = data[data['label'] != 1]
     
     counts = data['label'].value_counts()
     ##################################################
@@ -77,7 +78,6 @@ def prepare_data(path, normalize_features= [], normalize_by_node_features = [], 
     #stats.fillna(0, inplace=True)
     #data = data.groupby('trace_integer').apply(normalize_cluster)
     data = data.reset_index(drop=True)
-    data, stats = normalize_by_trace(data)
     transformation_features = normalize_by_node_features + normalize_features + scale_features
     for feature in transformation_features:
         measures[feature] = {}
@@ -90,6 +90,7 @@ def prepare_data(path, normalize_features= [], normalize_by_node_features = [], 
     for feature in normalize_features:
         data, feature_mean, feature_std = normalize(data, feature)
         measures[feature]['norm'] = [feature_mean, feature_std]
+    data, stats = normalize_by_trace(data)
     measures['latency'] = {}
     measures['latency']['norm_by_trace'] = stats
     global_map = prepare_global_map(data)
@@ -111,15 +112,18 @@ def order_data(data_row):
     data_row['file_write_rate'] = [data_row['file_write_rate'][i] for i in sorted_indices]
     return data_row
 
-def normalize_by_trace(data):    
-    values = data.apply(pd.Series.explode)
+def normalize_by_trace(data, grouped_data=True):    
+    if grouped_data:
+        values = data.apply(pd.Series.explode)
+    else:
+        values = data
         
     print("\n********************************")
     print("***Normalizing latency by trace***")
     print("********************************\n")
    
     # Group by 'node_name' and calculate mean and std of column values
-    result = values.groupby(['trace_integer', 's_t'])['latency'].agg(['mean', 'std'])
+    result = values.groupby(['trace_integer', 's_t'])['latency'].agg(['mean', 'std', 'max', 'min', 'count'])
     result = result.reset_index()
     result[['source', 'target']] = result['s_t'].apply(pd.Series)
     result.drop(columns=['s_t'], inplace=True)
@@ -127,23 +131,37 @@ def normalize_by_trace(data):
 
     # If you want to reset the index and have 'node_name' as a regular column:
     #result.reset_index(inplace=True)
-    result.fillna(0, inplace=True)
+    result.fillna(1, inplace=True)
     
-    values = values.groupby(['trace_integer', 's_t']).apply(normalize_cluster, column='latency')
+    values = values.groupby(['trace_integer', 's_t']).apply(normalize_cluster, column='latency', center=True)
     values = values.reset_index(drop=True)
-    print("Grouping by trace_id")
-    values = values.groupby(['trace_id', 'trace_integer']).agg(lambda x: x.tolist())
-    values = values.reset_index()
-    print("Ordering rows")
-    values = values.apply(lambda row: order_data(row), axis=1)
+    if grouped_data:
+        print("Grouping by trace_id")
+        values = values.groupby(['trace_id', 'trace_integer']).agg(lambda x: x.tolist())
+        values = values.reset_index()
+        print("Ordering rows")
+        values = values.apply(lambda row: order_data(row), axis=1)
     return values, result
 
-def normalize_cluster(cluster, column):
+def normalize_cluster(cluster, column, center=True):
+    mean = cluster[column].mean()
     std = cluster[column].std()
+    maximum = cluster[column].max()
+    minimum = cluster[column].min()
+    cluster['mean'] = mean
+    cluster['maximum'] = maximum
+    cluster['minimum'] = minimum
     if std == 0 or np.isnan(std):
-        cluster[column] = 0
+        if center:
+            cluster[column] = 0
+            z_scores = cluster[column]
+        cluster['std'] = 1
     else:
-        cluster[column] = (cluster[column] - cluster[column].mean()) / cluster[column].std()
+        if center:
+            z_scores = (cluster[column] - mean) / std
+        cluster['std'] = std
+    probabilities = norm.cdf(z_scores.to_numpy().astype(float))
+    cluster[column] = probabilities
     return cluster
 
 def recover_by_trace(values, trace_integers, edges, measures):
@@ -159,6 +177,7 @@ def recover_by_trace(values, trace_integers, edges, measures):
 def recover_by_cluster(values, trace_integers, measures):
     recovered_values = []
     for (value, trace_integer) in zip(values, trace_integers):
+        value = norm.ppf(value)
         mean = measures.loc[trace_integer.item(), 'mean']
         std = measures.loc[trace_integer.item(), 'std']
         recovered_value = [(value * std) + mean]
@@ -208,7 +227,7 @@ def scale_values(values, maximum, minimum):
     minimum = log(minimum)
     for value in values:
         scaled_value = log(value)
-        scaled_value = (scaled_value - minimum) / (maximum-minimum)
+        #scaled_value = (scaled_value - minimum) / (maximum-minimum)
         scaled_values = scaled_values + [scaled_value]
     return scaled_values
 
@@ -218,7 +237,7 @@ def recover_value(values, maximum, minimum):
     minimum = log(minimum)
     #recovered_values = inv_boxcox(values, maximum)
     for value in values:
-        value = ((maximum - minimum) * value) + minimum
+        #value = ((maximum - minimum) * value) + minimum
         recovered_value = 10 ** value
         recovered_values = recovered_values + [recovered_value]
     
@@ -370,8 +389,7 @@ def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = [
              'mem_use_percent': trace['mem_use_percent'],
              'net_send_rate': trace['net_send_rate'],
              'net_receive_rate': trace['net_receive_rate'],
-             'file_read_rate': trace['file_read_rate'],
-             'trace_integer': trace['trace_integer']}
+             'file_read_rate': trace['file_read_rate']}
         
 
     for feature in normalize_by_node_features:
@@ -383,10 +401,17 @@ def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = [
     #Create dataframe of edges
     edges = pd.DataFrame(trace['s_t'], columns = ['source', 'target'])
     nedges = pd.DataFrame({'edges': trace['s_t']})['edges']
-    
+
     trace_integers = [trace['trace_integer']] * len(edges)
     trace_integer = trace['trace_integer']
     
+    edge_attr = {'trace_integer': trace_integers,\
+                 'mean': trace['mean'],\
+                 'std': trace['std'],\
+                 'max': trace['maximum'],\
+                 'min': trace['minimum']}  
+    
+    edge_attr = pd.DataFrame(edge_attr)
     #Assume that the metrics belong to the target node in the edge. Store the 
     #node name of the target with the metrics
     nodes['node_name'] = edges['target']
@@ -407,7 +432,7 @@ def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = [
     # Create a DataFrame filled with zeros with the same number of rows as 'not_in_target'
     # and one less column than 'nodes'
         zero_df = pd.DataFrame(0, index=range(len(not_in_target)), columns=nodes.columns[:-1])
-        zero_df['trace_integer'] = trace_integer
+        #zero_df['trace_integer'] = trace_integer
         source_df = pd.DataFrame(not_in_target['source'].values, columns=['node_name'])
         
         # Reset the index of zero_df and source_df to align them properly
@@ -454,7 +479,9 @@ def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = [
     trace_lat_tensor = torch.tensor(trace_lat, dtype=torch.float32)
     trace_integers_tensor = torch.tensor(trace_integers, dtype=torch.long)
     trace_integer_tensor = torch.tensor(trace_integer, dtype=torch.long)
-    graph = Data(x=nodes_tensor, edge_index=edges_tensor, edge_attr=trace_integers_tensor, y=y_edge_tensor, trace_lat=trace_lat_tensor, trace_integer=trace_integer_tensor)
+    edge_attr_tensor = torch.tensor(edge_attr.values, dtype=torch.float32)
+    graph = Data(x=nodes_tensor, edge_index=edges_tensor, edge_attr=edge_attr_tensor, y=y_edge_tensor, trace_lat=trace_lat_tensor, trace_integer=trace_integer_tensor)
+    graph.trace_integers = trace_integers_tensor
     graph.node_names = nedges
     graph.first_node = nedges[-1:]
 

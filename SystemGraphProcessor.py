@@ -19,12 +19,12 @@ import networkx as nx
 from scipy.stats import boxcox
 from scipy.special import inv_boxcox
 from torch_geometric.utils import to_networkx
-from Preprocess import get_trace_integer, normalize_cluster
+from Preprocess import get_trace_integer, normalize_by_trace
 
 def prepare_data(path, normalize_features= [], normalize_by_node_features = [], scale_features = []):
     data = pd.DataFrame()
     data_dir = Path(path)
-    file_list = list(map(str, data_dir.glob("*.pkl")))
+    file_list = list(map(str, data_dir.glob("admin*.pkl")))
     '''
     ##################################################
     print("\n***********File List************")
@@ -49,7 +49,6 @@ def prepare_data(path, normalize_features= [], normalize_by_node_features = [], 
         df['trace_integer'] = df.apply(lambda row: get_trace_integer(row, trace_to_integer), axis=1)
         df = df.apply(pd.Series.explode)
         df[['source', 'target']] = df['s_t'].apply(pd.Series)
-        df.drop('s_t', axis=1, inplace=True)
         data = pd.concat([data,df])
     data = data[data['label'] != 1]
     data.reset_index(drop=True, inplace=True)
@@ -61,15 +60,14 @@ def prepare_data(path, normalize_features= [], normalize_by_node_features = [], 
     data = data[~data['trace_id'].isin(outliers)]
     data.reset_index(drop=True, inplace=True)
     # Group by trace_integer and calculate mean and standard deviation
-    stats = data.groupby('trace_integer')['max_latency'].agg(['mean', 'std'])
-    stats.fillna(0, inplace=True)
+    data, stats = normalize_by_trace(data, grouped_data=False)
+    
     data = data.sort_values(by='timestamp')
     data.reset_index(drop=True, inplace=True)
-    # Apply the normalization function to each group based on trace_integer
-    data = data.groupby('trace_integer').apply(normalize_cluster)
+    
     # Remove duplicates based on 'timestamp' and 'target'
-    edges = data[['timestamp', 'trace_id', 'source', 'target', 'max_latency', 'trace_integer']]
-    edges.rename(columns={'max_latency': 'latency'}, inplace=True)
+    edges = data[['timestamp', 'trace_id', 'source', 'target', 'latency', 'trace_integer', 's_t']]
+    #edges.rename(columns={'max_latency': 'latency'}, inplace=True)
     #edges['latency'] = edges.latency.apply(lambda value: log(value))
     data = data.drop_duplicates(subset=['timestamp', 'target'])
     
@@ -186,30 +184,33 @@ def prepare_graphs(nodes, edges, features):
         max_latencies = []
         for trace_id, trace_edges in edges_by_traces:
             global_to_local = {}
+            nedges = trace_edges['s_t']
             trace_nodes = pd.concat([trace_edges['source'], trace_edges['target']]).drop_duplicates()
             global_to_local = {value: idx for idx, value in enumerate(trace_nodes) if value not in global_to_local}
             trace_edges['source'] = trace_edges['source'].map(global_to_local)
             trace_edges['target'] = trace_edges['target'].map(global_to_local)
             trace_latencies = trace_edges['latency'].astype(float)
-            total_lat = trace_latencies.max()
+            total_lat = trace_latencies.iloc[-1]
             max_latencies = max_latencies + [total_lat]
             trace_nodes_tensor = torch.tensor(trace_nodes.values, dtype=torch.long)
             edge_weights = trace_edges['trace_integer']
             trace_integer = trace_edges['trace_integer'].iloc[0]
-            trace_edges = trace_edges.drop(columns=['timestamp', 'trace_id', 'latency', 'weight', 'trace_integer'])
+            trace_edges = trace_edges.drop(columns=['timestamp', 'trace_id', 'latency', 'weight', 'trace_integer', 's_t'])
             trace_edges_tensor = torch.tensor(trace_edges.values, dtype=torch.long).t().contiguous()
             trace_latency_tensor = torch.tensor(trace_latencies.values, dtype=torch.float32)
             targets = torch.tensor(total_lat, dtype=torch.float32)
             edge_weights = torch.tensor(edge_weights.values, dtype=torch.long)
             trace_integer = torch.tensor(trace_integer, dtype=torch.long)
             graph = Data(x=trace_nodes_tensor,edge_index=trace_edges_tensor,edge_attr=edge_weights,trace_integer=trace_integer,y=trace_latency_tensor,targets=targets)
+            graph.edge_names = nedges
+            graph.first_edge = nedges[-1:]
             trace_graphs = trace_graphs + [graph]
         
         
         nodes = nodes[features]
         edges = edges.drop_duplicates(subset=['source', 'target'])
         edge_weights = edges['trace_integer']
-        edges = edges.drop(columns=['timestamp', 'trace_id', 'latency', 'weight', 'trace_integer'])
+        edges = edges.drop(columns=['timestamp', 'trace_id', 'latency', 'weight', 'trace_integer', 's_t'])
         latency_tensor = torch.tensor(latencies.values, dtype=torch.float32)
         nodes_tensor = torch.tensor(nodes.values, dtype=torch.float32)
         edges_tensor = torch.tensor(edges.values, dtype=torch.long).t().contiguous()
@@ -254,6 +255,6 @@ def system_graph_processor(path, features):
 
 if __name__ == "__main__":
     features = ['cpu_use', 'mem_use_percent', 'mem_use_amount', 'net_send_rate', 'net_receive_rate', 'file_read_rate']
-    nodes, edges, measures, trace_to_integer = prepare_data('./A/microservice/test/', scale_features=features)
+    nodes, edges, measures, trace_to_integer = prepare_data('./A/microservice/test/')
     
     graphs, num_nodes = prepare_graphs(nodes, edges, features)

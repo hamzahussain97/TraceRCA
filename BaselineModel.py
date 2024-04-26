@@ -154,9 +154,9 @@ class EmbEdgeGNNGRU(torch.nn.Module):
     def __init__(self, input_dim, hidden_dim, vocab_size, embedding_dim, output_dim, predict_graph=True):
         super(EmbEdgeGNNGRU, self).__init__()
         self.embedding = Embedding(vocab_size, embedding_dim)
-        self.conv1 = GraphConv(input_dim + embedding_dim, hidden_dim)
-        self.conv2 = GraphConv(hidden_dim, hidden_dim)
-        self.conv3 = GraphConv(hidden_dim, hidden_dim)
+        self.conv1 = GATConv(input_dim + embedding_dim, hidden_dim)
+        self.conv2 = GATConv(hidden_dim, hidden_dim)
+        self.conv3 = GATConv(hidden_dim, hidden_dim)
         self.fc = torch.nn.Linear(hidden_dim, input_dim)
         self.gru_cell = GRU(hidden_dim, output_dim, batch_first=True)
         self.initial_hs = Parameter(torch.zeros(1, 1), requires_grad=True)
@@ -173,11 +173,11 @@ class EmbEdgeGNNGRU(torch.nn.Module):
         #norms[norms == 0] = 1e-8
         # Normalize each row
         #x = x.div(norms)
-        x = self.conv1(x, edge_index)
+        x = self.conv1(x, edge_index, edge_attr)
         x = F.gelu(x)
-        x = self.conv2(x, edge_index)
+        x = self.conv2(x, edge_index, edge_attr)
         x = F.gelu(x)
-        x = self.conv3(x, edge_index)
+        x = self.conv3(x, edge_index, edge_attr)
         x = F.gelu(x)
         #x = self.fc(x)
         #x = F.gelu(x)
