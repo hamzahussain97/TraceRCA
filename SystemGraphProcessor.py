@@ -50,7 +50,7 @@ def prepare_data(path, normalize_features= [], normalize_by_node_features = [], 
         df = df.apply(pd.Series.explode)
         df[['source', 'target']] = df['s_t'].apply(pd.Series)
         data = pd.concat([data,df])
-    data = data[data['label'] != 1]
+    #data = data[data['label'] != 1]
     data.reset_index(drop=True, inplace=True)
     outliers = ['d3fdfb558dfb754de55b9e8d80eeb7a3', \
                 'f8398b6b1ad61f915ff275141eb345e7', \

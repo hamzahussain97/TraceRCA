@@ -32,13 +32,16 @@ one_hot_enc = False
 normalize_features = ['cpu_use', 'mem_use_percent', 'net_send_rate', 'net_receive_rate', 'file_read_rate']
 normalize_by_node_features = ['cpu_use', 'mem_use_percent', 'net_send_rate', 'net_receive_rate', 'file_read_rate']
 scale_features = []
-validate_on_trace = False
+validate_on_trace = True
 
 model_trainer = ModelTrainer(data_dir, batch_size, predict_graph, one_hot_enc=one_hot_enc,\
                              normalize_features=normalize_features,\
                              normalize_by_node_features=normalize_by_node_features,\
                              scale_features=scale_features, validate_on_trace=validate_on_trace)
 
+#measures = model_trainer.measures['norm_by_trace']
+#total_traces = measures.index.get_level_values('trace_integer').max() + 1
+total_traces = 5
 # Initialize the model
 input_dim = 10
 hidden_dim = 128
@@ -46,13 +49,13 @@ vocab_size = len(model_trainer.global_map)
 node_embedding_size = 10
 output_dim = 1  # Assuming binary classification
 
-model = EmbEdgeGNNGRU(input_dim, hidden_dim, vocab_size, node_embedding_size, output_dim,\
+model = EmbEdgeGNNGRU(input_dim, hidden_dim, vocab_size, total_traces, node_embedding_size, output_dim,\
             predict_graph=model_trainer.predict_graph)
 model_trainer.set_model(model)
 
 # Define Loss functions and optimizer
-epochs = 10
-loss = torch.nn.MSELoss(reduction='mean')
+epochs = 20
+loss = torch.nn.L1Loss(reduction='mean')
 criterion = torch.nn.L1Loss(reduction='mean')
 optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
 model = model_trainer.train(epochs, loss, criterion, optimizer)

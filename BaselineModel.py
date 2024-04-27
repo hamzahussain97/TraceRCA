@@ -49,12 +49,12 @@ class GNN(torch.nn.Module):
 
 
 class EmbGNN(torch.nn.Module):
-    def __init__(self, input_dim, hidden_dim, vocab_size, embedding_dim, output_dim, predict_graph=True, pool='add'):
+    def __init__(self, input_dim, hidden_dim, vocab_size, total_traces, embedding_dim, output_dim, predict_graph=True, pool='add'):
         super(EmbGNN, self).__init__()
         self.embedding = Embedding(vocab_size, embedding_dim)
-        self.conv1 = GCNConv(input_dim + embedding_dim, hidden_dim)
-        self.conv2 = GCNConv(hidden_dim, hidden_dim)
-        self.conv3 = GCNConv(hidden_dim, hidden_dim)
+        self.conv1 = GATConv(input_dim + embedding_dim, hidden_dim)
+        self.conv2 = GATConv(hidden_dim, hidden_dim)
+        self.conv3 = GATConv(hidden_dim, hidden_dim)
         self.predict_graph = predict_graph
         if self.predict_graph:
             self.fc = torch.nn.Linear(hidden_dim, output_dim)
@@ -63,20 +63,20 @@ class EmbGNN(torch.nn.Module):
         self.pool = pool
 
     def forward(self, data, batch):
-        x, edge_index = data.x, data.edge_index
+        x, edge_index, edge_attr = data.x, data.edge_index, data.edge_attr
         node_index = x[:,-1].long()
         emb_vecs = self.embedding(node_index)
         assert x.shape[0] == emb_vecs.shape[0]
         x = torch.cat((x[:,:-1], emb_vecs), axis=1)
         # Compute the norms of each row
-        norms = torch.norm(x, dim=1, keepdim=True)
+        #norms = torch.norm(x, dim=1, keepdim=True)
         # Normalize each row
-        x = x.div(norms)
-        x = self.conv1(x, edge_index)
+        #x = x.div(norms)
+        x = self.conv1(x, edge_index, edge_attr)
         x = F.gelu(x)
-        x = self.conv2(x, edge_index)
+        x = self.conv2(x, edge_index, edge_attr)
         x = F.gelu(x)
-        x = self.conv3(x, edge_index)
+        x = self.conv3(x, edge_index, edge_attr)
         x = F.gelu(x)
         if self.predict_graph == False:
             #Start decoding
@@ -131,7 +131,6 @@ class EmbNodeGNNGRU(torch.nn.Module):
         # Initialize hidden states
         hidden_state = self.initial_hs.expand(1, batch.max().item() + 1, 1)
         predictions, hidden_state = self.gru_cell(gru_input, hidden_state)
-        
         # Apply mask to predictions
         masked_predictions = predictions.squeeze() * mask
 
@@ -151,10 +150,11 @@ class EmbNodeGNNGRU(torch.nn.Module):
         return x
 
 class EmbEdgeGNNGRU(torch.nn.Module):
-    def __init__(self, input_dim, hidden_dim, vocab_size, embedding_dim, output_dim, predict_graph=True):
+    def __init__(self, input_dim, hidden_dim, vocab_size, total_traces, embedding_dim, output_dim, predict_graph=True):
         super(EmbEdgeGNNGRU, self).__init__()
         self.embedding = Embedding(vocab_size, embedding_dim)
-        self.conv1 = GATConv(input_dim + embedding_dim, hidden_dim)
+        self.t_embedding = Embedding(total_traces, embedding_dim)
+        self.conv1 = GATConv(input_dim+embedding_dim, hidden_dim)
         self.conv2 = GATConv(hidden_dim, hidden_dim)
         self.conv3 = GATConv(hidden_dim, hidden_dim)
         self.fc = torch.nn.Linear(hidden_dim, input_dim)
@@ -165,14 +165,17 @@ class EmbEdgeGNNGRU(torch.nn.Module):
     def forward(self, data, batch):
         x, edge_index, edge_attr = data.x, data.edge_index, data.edge_attr
         node_index = x[:,-1].long()
+        #trace_index = edge_attr.long()
         emb_vecs = self.embedding(node_index)
+        #edge_attr = self.t_embedding(trace_index)
         assert x.shape[0] == emb_vecs.shape[0]
         x = torch.cat((x[:,:-1], emb_vecs), axis=1)
+        #x = x[:,:-1]
         # Compute the norms of each row
-        #norms = torch.norm(x, dim=1, keepdim=True)
+        #norms = torch.norm(edge_attr, dim=1, keepdim=True)
         #norms[norms == 0] = 1e-8
         # Normalize each row
-        #x = x.div(norms)
+        #edge_attr = edge_attr.div(norms)
         x = self.conv1(x, edge_index, edge_attr)
         x = F.gelu(x)
         x = self.conv2(x, edge_index, edge_attr)
@@ -191,6 +194,8 @@ class EmbEdgeGNNGRU(torch.nn.Module):
         # Initialize hidden states
         hidden_state = self.initial_hs.expand(1, batch_edge.max().item() + 1, 1)
         predictions, hidden_state = self.gru_cell(gru_input, hidden_state)
+        predictions = F.gelu(predictions)
+
         # Apply mask to predictions
         masked_predictions = predictions.squeeze(dim=2) * mask
         

@@ -123,7 +123,7 @@ class ModelTrainer():
             recovered = batch.y
             node_names = batch.node_names
             trace_integers = batch.trace_integers
-        loss = torch.sqrt(loss_fn(recov_pred, recovered))
+        loss = loss_fn(recov_pred, recovered)
         if self.validate_on_trace:
             edge_index = batch.edge_index
             batch_nodes = batch.batch
@@ -132,6 +132,7 @@ class ModelTrainer():
             node_names = batch.first_node
             trace_integers = batch.trace_integer
         recovered, recov_pred = self.recover_predictions(recovered, recov_pred, node_names, trace_integers)
+        #recovered = batch.original
         crit = criterion(recov_pred, recovered)
         return recovered, recov_pred, loss, crit
     
@@ -153,7 +154,7 @@ class ModelTrainer():
             recovered = recover_value(recovered, self.measures['scale'][0], self.measures['scale'][1])
             recov_pred = recover_value(recov_pred, self.measures['scale'][0], self.measures['scale'][1])
         else:
-            recovered = recover_by_trace(recovered, trace_integers, node_names, self.measures['norm_by_trace'])
+            recovered = recover_by_trace(recovered, trace_integers, node_names, self.measures['norm_by_trace'], True)
             recov_pred = recover_by_trace(recov_pred, trace_integers, node_names, self.measures['norm_by_trace'])
         return recovered, recov_pred
     
@@ -363,12 +364,13 @@ def percentiles(x,y):
     percentile_50 = np.percentile(x, 50)
     percentile_75 = np.percentile(x, 75)
     percentile_90 = np.percentile(x, 90)
+    percentile_95 = np.percentile(x, 95)
     
     index_25 = np.where((x <= percentile_25))[0]
     index_50 = np.where((x > percentile_25) & (x <= percentile_50))[0]
     index_75 = np.where((x > percentile_50) & (x <= percentile_75))[0]
-    index_90 = np.where((x > percentile_75) & (x <= percentile_90))[0]
-    index_100 = np.where((x > percentile_75))[0]
+    index_90 = np.where((x > percentile_90))[0]
+    index_100 = np.where((x > percentile_95))[0]
     
     percentiles = {}
     # Slice values based on percentiles
@@ -378,23 +380,23 @@ def percentiles(x,y):
     percentiles[25] = p_25
     
     
-    x_50 = x[index_50]
-    y_50 = y[index_50]
+    x_50 = x[index_50].flatten()
+    y_50 = y[index_50].flatten()
     p_50 = {'x': x_50, 'y': y_50}
     percentiles[50] = p_50
     
-    x_75 = x[index_75]
-    y_75 = y[index_75]
+    x_75 = x[index_75].flatten()
+    y_75 = y[index_75].flatten()
     p_75 = {'x': x_75, 'y': y_75}
     percentiles[75] = p_75
     
-    x_90 = x[index_90]
-    y_90 = y[index_90]
+    x_90 = x[index_90].flatten()
+    y_90 = y[index_90].flatten()
     p_90 = {'x': x_90, 'y': y_90}
     percentiles[90] = p_90
     
-    x_100 = x[index_100]
-    y_100 = y[index_100]
+    x_100 = x[index_100].flatten()
+    y_100 = y[index_100].flatten()
     p_100 = {'x': x_100, 'y': y_100}
     percentiles[100] = p_100
     
