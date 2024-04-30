@@ -9,6 +9,8 @@ import torch
 from torch_geometric.utils import to_networkx
 import networkx as nx
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+
 from CustomDataset import CustomDataset
 from Preprocess import preprocess, recover, recover_by_node, recover_value, recover_by_trace
 from torch.utils.data import random_split
@@ -17,13 +19,16 @@ from BaselineModel import GNN
 from torchmetrics.functional.regression import explained_variance
 from SystemGraphProcessor import system_graph_processor
 import numpy as np
+from torchmetrics import MeanAbsolutePercentageError
+
 
 class ModelTrainer():
-    def __init__(self, data_dir, batch_size, predict_graph=True, one_hot_enc=False, \
+    def __init__(self, data_dir, batch_size, quantiles=[], predict_graph=True, one_hot_enc=False, \
                  normalize_features=[], normalize_by_node_features=[], \
                  scale_features=[], validate_on_trace=False):
         
         self.batch_size=batch_size
+        self.quantiles=quantiles
         self.predict_graph=predict_graph
         self.one_hot_enc=one_hot_enc
         self.normalize_features=normalize_features 
@@ -98,19 +103,22 @@ class ModelTrainer():
                     val_loss = total_val_loss/len(val_loader)
                     target = torch.cat([target, recovered], axis=0)
                     predictions = torch.cat([predictions, recov_pred], axis=0)
-            
-
-            mape = MAPE(predictions, target)
-            e_var = explained_variance(predictions, target)
-            print(f"Epoch: {epoch}/{epochs}, Train Loss: {train_loss:.4f}, Train criterion: {train_crit:.4f}, Val Loss: {val_loss:.4f}, Val criterion: {val_crit:.4f}, Val MAPE: {mape:.4f}, Exp Var: {e_var:.4f}")
-            p_mape = percentile_mape(target, predictions)
-            print(f"MAPE by percentiles: {', '.join(f'{tensor.item():.4f}' for tensor in p_mape.values())}")
-            p_mae = percentile_mae(target, predictions)
-            print(f"MAE by percentiles: {', '.join(f'{tensor.item():.4f}' for tensor in p_mae.values())}")
-            threshold_breach_acc(target, predictions)
+            cov_prob = coverage_probability(target, predictions)
+            print(f"Epoch: {epoch}/{epochs}, Train Loss: {train_loss:.4f}, Train criterion: {train_crit:.4f}, Val Loss: {val_loss:.4f}, Val criterion: {val_crit:.4f}, Val Cov Prob: {cov_prob:.4f}")
+            for i, quantile in enumerate(self.quantiles):
+                mape = MAPE(predictions[:,i], target)
+                e_var = explained_variance(predictions[:,i], target)
+                print(f"Quantile: {quantile}")
+                print(f"Val MAPE: {mape:.4f}, Exp Var: {e_var:.4f}")
+                p_mape = percentile_mape(target, predictions[:,i])
+                print(f"MAPE by percentiles: {', '.join(f'{tensor.item():.4f}' for tensor in p_mape.values())}")
+                p_mae = percentile_mae(target, predictions[:,i])
+                print(f"MAE by percentiles: {', '.join(f'{tensor.item():.4f}' for tensor in p_mae.values())}")
+                if epoch == epochs: 
+                    plot(target, predictions[:,i])
+            if epoch == epochs:
+                plot_percentiles(target, predictions, self.quantiles)
             print("\n")
-            if epoch == epochs: 
-                plot(target, predictions)
         return self.model
     
     def step(self, batch, loss_fn, criterion):
@@ -123,7 +131,10 @@ class ModelTrainer():
             recovered = batch.y
             node_names = batch.node_names
             trace_integers = batch.trace_integers
-        loss = loss_fn(recov_pred, recovered)
+        #target = torch.stack([1 - recovered, recovered], dim=1)
+        #prediction = torch.stack([1 - recov_pred, recov_pred], dim=1)
+        target = torch.stack([recovered for _ in range(len(self.quantiles))], dim=1)
+        loss = loss_fn(recov_pred, target, self.quantiles)
         if self.validate_on_trace:
             edge_index = batch.edge_index
             batch_nodes = batch.batch
@@ -131,9 +142,9 @@ class ModelTrainer():
             recovered, recov_pred = self.extract_trace_lat(recovered, recov_pred, batch_edge)
             node_names = batch.first_node
             trace_integers = batch.trace_integer
-        recovered, recov_pred = self.recover_predictions(recovered, recov_pred, node_names, trace_integers)
+        #recovered, recov_pred = self.recover_predictions(recovered, recov_pred, node_names, trace_integers)
         #recovered = batch.original
-        crit = criterion(recov_pred, recovered)
+        crit = criterion(recov_pred[:,1], recovered)
         return recovered, recov_pred, loss, crit
     
     def extract_trace_lat(self, recovered, recov_pred, batch):
@@ -172,7 +183,7 @@ class ModelTrainer():
         with torch.no_grad():
             recov_pred = self.model(graph, torch.zeros(graph.x.size(0), dtype=torch.int64))
             
-        recovered, recov_pred = self.recover_predictions(recovered, recov_pred, node_names, trace_integers)
+        #recovered, recov_pred = self.recover_predictions(recovered, recov_pred, node_names, trace_integers)
         
         print("*************Prediction*************")
         print(recov_pred)
@@ -355,6 +366,16 @@ def threshold_breach_acc(target, predictions):
     for i, percentile in enumerate([75, 90, 95]):
         print(f"Percentile: {percentile}, Accuracy: {accuracy_list[i]:.3f}, Precision: {precision_list[i]:.3f}, Recall: {recall_list[i]:.3f}")
 
+def coverage_probability(targets, predictions):
+    # Check if the target falls within the predicted range for each percentile
+    covered = [predictions[j, 0] <= targets[j] <= predictions[j, -1] for j in range(len(targets))]
+    
+    # Calculate coverage probability
+    coverage_prob = sum(covered) / len(covered)
+    
+    # Return coverage probabilities
+    return coverage_prob
+
 def percentiles(x,y):
     x = x.numpy()
     y = y.numpy()
@@ -366,11 +387,11 @@ def percentiles(x,y):
     percentile_90 = np.percentile(x, 90)
     percentile_95 = np.percentile(x, 95)
     
-    index_25 = np.where((x <= percentile_25))[0]
-    index_50 = np.where((x > percentile_25) & (x <= percentile_50))[0]
-    index_75 = np.where((x > percentile_50) & (x <= percentile_75))[0]
-    index_90 = np.where((x > percentile_90))[0]
-    index_100 = np.where((x > percentile_95))[0]
+    index_25 = np.where((x <= 1))[0]
+    index_50 = np.where((x > 1) & (x <= 2))[0]
+    index_75 = np.where((x > 2) & (x <= 3))[0]
+    index_90 = np.where((x > 3) & (x <= 4))[0]
+    index_100 = np.where((x > 4) & (x <= 5))[0]
     
     percentiles = {}
     # Slice values based on percentiles
@@ -414,18 +435,110 @@ def plot(x, y):
 def plot_figure(i, p, u_l):
     plt.figure(i)
     plt.scatter(p[u_l]['x'],p[u_l]['y'])
-
-    max_val = max(max(p[u_l]['x']), max(p[u_l]['y']))
+    
+    if len(p[u_l]['x']) > 0:
+        max_val = max(max(p[u_l]['x']), max(p[u_l]['y']))
+        plt.grid(True)
+        plt.plot([0, max_val], [0, max_val], color='red', linestyle='--', label='y=x')
+        plt.show()
+        if u_l == 100:
+            plt.figure(i+1, figsize=(10, 6))  # Adjust the figure size as needed
+            plt.hist(p[u_l]['x'], bins=30, color='skyblue', edgecolor='black')
+            plt.title('Distribution of Latencies')
+            plt.xlabel('Latency')
+            plt.ylabel('Frequency')
+            plt.grid(True)
+            plt.show()
+            
+            plt.figure(i+2, figsize=(10, 6))  # Adjust the figure size as needed
+            plt.hist(p[u_l]['y'], bins=30, color='skyblue', edgecolor='black')
+            plt.title('Distribution of Latencies')
+            plt.xlabel('Latency')
+            plt.ylabel('Frequency')
+            plt.grid(True)
+            plt.show()
+        
+def plot_percentiles(targets, predictions, quantiles):
+    # Generate random colors using a color map
+    colors = cm.viridis(np.linspace(0, 1, len(quantiles)))
+    #colors = ['r', 'g', 'b']  # Colors for percentiles (10th, 50th, 90th)
+    
+    percentiles = list(zip(*predictions))
+    #min_val = min(min(targets), min(predictions[:,2]))
+    #max_val = max(max(targets), max(predictions[:,2]))
+    min_val = min(targets)
+    max_val = max(targets)
+    plt.figure(figsize=(10, 6))
+    # Scatter plot for each percentile
+    sorted_indexes = np.argsort(targets)
+    targets = np.array(targets)[sorted_indexes]
+    for i, percentile_values in enumerate(percentiles):
+        percentile_values = np.array(percentile_values)[sorted_indexes]
+        plt.plot(targets, percentile_values, c=colors[i], label=f'{quantiles[i]}th Percentile')
+    
+    # Add labels and legend
     plt.grid(True)
-    plt.plot([0, max_val], [0, max_val], color='red', linestyle='--', label='y=x')
+    plt.xlabel('Target Latency')
+    plt.ylabel('Prediction')
+    plt.title('Plot of Predicted Percentiles against Target Latency')
+    plt.legend()
+    
+    plt.plot([min_val, max_val], [min_val, max_val], color='red', linestyle='--', label='y=x')
+    # Show plot
     plt.show()
+    
+    plt.figure(figsize=(10, 6))
+    mean_pred = predictions[:,3]
+    
+    residuals = targets - np.array(mean_pred)[sorted_indexes]
+    # Plot residual vs. fitted
+    plt.scatter(mean_pred, residuals, color='blue')
+    plt.axhline(y=0, color='black', linestyle='--')  # Add a horizontal line at y=0 for reference
+    plt.xlabel('Fitted Values')
+    plt.ylabel('Residuals')
+    plt.title('Residuals vs. Fitted Values')
+    plt.grid(True)
+    plt.show()
+    
 
 def MAPE(output, target):
-    error = target - output
-    abs_error = error.abs()
-    p_error = abs_error / target
-    mape = torch.mean(p_error)
+    #error = target - output
+    #abs_error = error.abs()
+    #p_error = abs_error / target
+    #mape = torch.mean(p_error)
+    mean_abs_percentage_error = MeanAbsolutePercentageError()
+    mape = mean_abs_percentage_error(output, target)
     return mape
+
+def multi_quantile_loss(preds, target, quantiles):
+    assert isinstance(preds, torch.Tensor), "Predictions must be a torch.Tensor"
+    assert isinstance(target, torch.Tensor), "Target must be a torch.Tensor"
+    assert isinstance(quantiles, (list, torch.Tensor)), "Quantiles must be a list or torch.Tensor"
+    assert len(preds.shape) == 2, "Predictions must have 2 dimensions (batch_size, num_quantiles)"
+    assert preds.shape[1] == len(quantiles), f"Number of predictions ({preds.shape[1]}) must match the number of quantiles ({len(quantiles)})"
+    assert preds.shape == target.shape, "Shape of predictions must match shape of target"
+
+    if isinstance(quantiles, list):
+        assert all(0 < q < 1 for q in quantiles), "Quantiles should be in (0, 1) range"
+    else:
+        assert torch.all((0 < quantiles) & (quantiles < 1)), "Quantiles should be in (0, 1) range"
+
+    # Convert quantiles to a tensor if it's a list
+    if isinstance(quantiles, list):
+        quantiles_tensor = torch.tensor(quantiles, device=preds.device).view(1, -1)
+    else:
+        quantiles_tensor = quantiles.view(1, -1)
+
+    # Calculate errors
+    errors = target - preds
+
+    # Calculate losses for each quantile
+    losses = torch.max((quantiles_tensor - 1) * errors, quantiles_tensor * errors)
+
+    # Sum the losses and take the mean
+    loss = torch.mean(torch.sum(losses, dim=1))
+
+    return loss
 
 def RRMSE(output, target):
     target[target==0] = 1
@@ -437,9 +550,16 @@ def MBE(output, target):
     return SE
 
 def MAE(output, target):
-    criterion = torch.nn.L1Loss(reduction='mean')
-    MAE = criterion(output, target)
+    #criterion = torch.nn.L1Loss(reduction='mean')
+    #MAE = criterion(output, target)
+    MAE = torch.mean(output - target)
     return MAE
+
+def quantile_loss(preds, target, quantile):
+    assert 0 < quantile < 1, "Quantile should be in (0, 1) range"
+    errors = target - preds
+    loss = torch.max((quantile - 1) * errors, quantile * errors)
+    return torch.abs(loss).mean()
 '''
 if __name__ == "__main__":
     data, measures, global_map, loaders = prepare_data(batch_size=128, one_hot_enc=True)

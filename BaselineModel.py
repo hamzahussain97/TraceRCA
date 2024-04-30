@@ -26,6 +26,7 @@ class GNN(torch.nn.Module):
         x, edge_index = data.x, data.edge_index
         # Compute the norms of each row
         norms = torch.norm(x, dim=1, keepdim=True)
+        norms[norms == 0] = 1e-8
         # Normalize each row
         x = x.div(norms)
         x = self.conv1(x, edge_index)
@@ -52,7 +53,7 @@ class EmbGNN(torch.nn.Module):
     def __init__(self, input_dim, hidden_dim, vocab_size, total_traces, embedding_dim, output_dim, predict_graph=True, pool='add'):
         super(EmbGNN, self).__init__()
         self.embedding = Embedding(vocab_size, embedding_dim)
-        self.conv1 = GATConv(input_dim + embedding_dim, hidden_dim)
+        self.conv1 = GATConv(input_dim+embedding_dim, hidden_dim)
         self.conv2 = GATConv(hidden_dim, hidden_dim)
         self.conv3 = GATConv(hidden_dim, hidden_dim)
         self.predict_graph = predict_graph
@@ -68,10 +69,12 @@ class EmbGNN(torch.nn.Module):
         emb_vecs = self.embedding(node_index)
         assert x.shape[0] == emb_vecs.shape[0]
         x = torch.cat((x[:,:-1], emb_vecs), axis=1)
+        #x = x[:,:-1]
         # Compute the norms of each row
-        #norms = torch.norm(x, dim=1, keepdim=True)
+        #norms = torch.norm(edge_attr, dim=1, keepdim=True)
+        #norms[norms == 0] = 1e-8
         # Normalize each row
-        #x = x.div(norms)
+        #edge_attr = edge_attr.div(norms)
         x = self.conv1(x, edge_index, edge_attr)
         x = F.gelu(x)
         x = self.conv2(x, edge_index, edge_attr)
@@ -89,8 +92,8 @@ class EmbGNN(torch.nn.Module):
                 x = global_add_pool(x, batch)
         # Fully connected layer
         x = self.fc(x)
-        x = F.gelu(x)
-        return x.squeeze(dim=1)
+        x = F.leaky_relu(x, 0.01)
+        return x
 
 class EmbNodeGNNGRU(torch.nn.Module):
     def __init__(self, input_dim, hidden_dim, vocab_size, embedding_dim, output_dim, predict_graph = True):
@@ -194,7 +197,7 @@ class EmbEdgeGNNGRU(torch.nn.Module):
         # Initialize hidden states
         hidden_state = self.initial_hs.expand(1, batch_edge.max().item() + 1, 1)
         predictions, hidden_state = self.gru_cell(gru_input, hidden_state)
-        predictions = F.gelu(predictions)
+        #predictions = F.gelu(predictions).div(predictions)
 
         # Apply mask to predictions
         masked_predictions = predictions.squeeze(dim=2) * mask

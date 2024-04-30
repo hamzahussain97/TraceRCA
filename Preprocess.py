@@ -15,7 +15,7 @@ import torch
 from torch_geometric.data import Data
 import math
 import torch_geometric.transforms as T
-from scipy.stats import norm, gamma, t
+from scipy.stats import norm, t
 import matplotlib.pyplot as plt
 import networkx as nx
 from scipy.stats import boxcox
@@ -26,7 +26,7 @@ from torch_geometric.utils import to_networkx
 def prepare_data(path, normalize_features= [], normalize_by_node_features = [], scale_features = []):
     data = pd.DataFrame()
     data_dir = Path(path)
-    file_list = list(map(str, data_dir.glob("*.pkl")))
+    file_list = list(map(str, data_dir.glob("assurance*.pkl")))
     '''
     ##################################################
     print("\n***********File List************")
@@ -71,6 +71,13 @@ def prepare_data(path, normalize_features= [], normalize_by_node_features = [], 
                 '9f6fb14ccb19fc48668c1898c4835905', \
                 '6b479c5de1a70eb50b1ea151c93b6181']
     data = data[~data['trace_id'].isin(outliers)]
+    '''
+    occurrences = data['trace_integer'].value_counts()
+    # Filter out values with counts less than 10
+    trace_integers_to_keep = occurrences[occurrences >= 30].index.tolist()
+    # Filter original DataFrame based on the condition
+    data = data[data['trace_integer'].isin(trace_integers_to_keep)]
+    '''
     measures = {}
     # Apply the normalization function to each group based on trace_integer
     #stats = data.groupby('trace_integer')['max_latency'].agg(['mean', 'std'])
@@ -90,10 +97,13 @@ def prepare_data(path, normalize_features= [], normalize_by_node_features = [], 
         data, feature_mean, feature_std = normalize(data, feature)
         measures[feature]['norm'] = [feature_mean, feature_std]
     data, stats = normalize_by_trace(data)
-    measures['latency'] = {}
-    measures['latency']['norm_by_trace'] = stats
-    for columns in ['mean', 'std', 'maximum', 'minimum']:
-        data, feature_mean, feature_std = normalize(data, feature)
+    #measures['latency'] = {}
+    #measures['latency']['norm_by_trace'] = stats
+    #data = data[data['trace_length'] > 1]
+    
+    for column in ['mean', 'std', 'maximum', 'minimum']:
+        data, feature_mean, feature_std = normalize(data, column)
+    
     global_map = prepare_global_map(data)
     return data, global_map, measures
 
@@ -111,6 +121,7 @@ def order_data(data_row):
     data_row['net_receive_rate'] = [data_row['net_receive_rate'][i] for i in sorted_indices]
     data_row['file_read_rate'] = [data_row['file_read_rate'][i] for i in sorted_indices]
     data_row['file_write_rate'] = [data_row['file_write_rate'][i] for i in sorted_indices]
+    data_row['trace_length'] = len(sorted_indices)
     return data_row
 
 def normalize_by_trace(data, grouped_data=True):    
@@ -134,7 +145,8 @@ def normalize_by_trace(data, grouped_data=True):
     #result.reset_index(inplace=True)
     result.fillna(1, inplace=True)
     
-    values = values.groupby(['trace_integer', 's_t']).apply(normalize_cluster, column='latency', center=True)
+    columns = ['latency']
+    values = values.groupby(['trace_integer', 's_t']).apply(normalize_cluster, columns=columns, center=False)
     values = values.reset_index(drop=True)
     if grouped_data:
         print("Grouping by trace_id")
@@ -144,47 +156,51 @@ def normalize_by_trace(data, grouped_data=True):
         values = values.apply(lambda row: order_data(row), axis=1)
     return values, result
 
-def normalize_cluster(cluster, column, center=True):
+def normalize_cluster(cluster, columns, center=True):
     #data = cluster[cluster['label'] != 1]
     data = cluster
-    mean = data[column].mean()
-    std = data[column].std()
-    maximum = data[column].max()
-    minimum = data[column].min()
-    cluster['mean'] = mean
-    cluster['maximum'] = maximum
-    cluster['minimum'] = minimum
-    df = cluster.shape[0] - 1
-    if df == 0:
-        df = 1
-    '''
-    if len(cluster[column]) > 1:
-        mean, _, _ = gamma.fit(cluster[column].astype('float32'))
-    else:
-        std = 1
-    '''
-    if std == 0 or np.isnan(std):
-        if center:
-            cluster[column] = 0
-            z_scores = cluster[column]
-        cluster['std'] = 1
-    else:
-        if center:
-            z_scores = (cluster[column] - mean) / std
-        cluster['std'] = std
-    if center:
-        #probabilities = gamma.cdf(cluster[column].astype('float32'), a=mean)
-        #probabilities = t.cdf(z_scores.to_numpy().astype(float), df=df)
-        cluster[column] = z_scores
+    for column in columns:
+        mean = data[column].mean()
+        std = data[column].std()
+        if column == 'latency':
+            count = data[column].count()
+            maximum = data[column].max()
+            minimum = data[column].min()
+            cluster['mean'] = mean
+            cluster['maximum'] = maximum
+            cluster['minimum'] = minimum
+            cluster['count'] = count
+        df = cluster.shape[0] - 1
+        if df == 0:
+            df = 1
         '''
-        mean = cluster[column].mean()
-        std = cluster[column].std()
-        maximum = cluster[column].max()
-        minimum = cluster[column].min()
-        cluster['mean'] = mean
-        cluster['maximum'] = maximum
-        cluster['minimum'] = minimum
+        if len(cluster[column]) > 1:
+            mean, _, _ = gamma.fit(cluster[column].astype('float32'))
+        else:
+            std = 1
         '''
+        if std == 0 or np.isnan(std):
+            if center:
+                cluster[column] = 0
+                z_scores = cluster[column]
+            cluster['std'] = 1
+        else:
+            if center:
+                z_scores = (cluster[column] - mean) / std
+            cluster['std'] = std
+        if center:
+            #probabilities = gamma.cdf(cluster[column].astype('float32'), a=mean)
+            probabilities = norm.cdf(z_scores.to_numpy().astype(float))
+            cluster[column] = probabilities
+            '''
+            mean = cluster[column].mean()
+            std = cluster[column].std()
+            maximum = cluster[column].max()
+            minimum = cluster[column].min()
+            cluster['mean'] = mean
+            cluster['maximum'] = maximum
+            cluster['minimum'] = minimum
+            '''
     return cluster
 
 def recover_by_trace(values, trace_integers, edges, measures, original=False):
@@ -192,20 +208,20 @@ def recover_by_trace(values, trace_integers, edges, measures, original=False):
     edges = pd.concat(edges).reset_index(drop=True)
     for (value, trace_integer, edge) in zip(values, trace_integers, edges):
         value = value.item()
-        '''
-        if value > 0.999:
-            value = 0.999
-        if value < 0.001:
-            value = 0.001
-        '''
+        
+        if value > 0.999999999:
+            value = 0.999999999
+        if value < 0.000000001:
+            value = 0.000000001
+        
         mean = measures.loc[(trace_integer.item(), edge[0], edge[1]), 'mean']
         std = measures.loc[(trace_integer.item(), edge[0], edge[1]), 'std']
         df = measures.loc[(trace_integer.item(), edge[0], edge[1]), 'count']
         if df == 0:
             df = 1
         #recovered_value = [gamma.ppf(value, a=mean)]
-        #recovered_value = t.ppf(value, df=df)
-        recovered_value = (value * std) + mean
+        recovered_value = norm.ppf(value)
+        recovered_value = (recovered_value * std) + mean
         recovered_values = recovered_values + [recovered_value]
     return torch.tensor(recovered_values, dtype=torch.float32)
 
@@ -387,9 +403,11 @@ def normalize(data, column):
     
     # Calculate the standard deviation
     std = math.sqrt(squared_mean - mean**2)
+    '''
     if column == 'latency':
         latencies = data['latency'].explode()
         mean, std, _ = gamma.fit(latencies.astype('float32'))
+    '''
     data[column] = data[column].apply(lambda values: centre(values, mean, std, column))
     return data, mean, std
 
@@ -398,8 +416,6 @@ def centre(values, mean, std, column):
     if std == 0: std=1
     for value in values:
         centred_value = (value - mean) / std
-        if column == 'latency':
-            centred_value = gamma.cdf(centred_value, a=mean, scale=std)
         centred_values = centred_values + [centred_value]
     return centred_values
 
@@ -551,9 +567,9 @@ def preprocess(path, one_hot_enc = False, normalize_features = [], normalize_by_
 if __name__ == "__main__":   
     data, graphs, global_map, measures = preprocess('./A/microservice/test/', one_hot_enc=False, normalize_features=[], \
     normalize_by_node_features=[])
-    normal = data[data['label'] != 1]
-    abnormal = data[data['label'] == 1]
-    latencies = normal['latency'].explode()
+    #normal = data[data['label'] != 1]
+    #abnormal = data[data['label'] == 1]
+    latencies = data['latency'].explode()
     # Plot a histogram of the latencies
     plt.figure(figsize=(10, 6))  # Adjust the figure size as needed
     plt.hist(latencies, bins=30, color='skyblue', edgecolor='black')
@@ -562,6 +578,7 @@ if __name__ == "__main__":
     plt.ylabel('Frequency')
     plt.grid(True)
     plt.show()
+    '''
     latencies = abnormal['latency'].explode()
     # Plot a histogram of the latencies
     plt.figure(2, figsize=(10, 6))  # Adjust the figure size as needed
@@ -571,6 +588,7 @@ if __name__ == "__main__":
     plt.ylabel('Frequency')
     plt.grid(True)
     plt.show()
+    '''
     graph = graphs[386]
     #inv_map = inv_maps[386]
     #g = to_networkx(graph, to_undirected=False)
