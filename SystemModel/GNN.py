@@ -22,26 +22,20 @@ class SystemGNN(torch.nn.Module):
 
     def forward(self, data, batch):
         x, edge_index, edge_attr = data.x, data.edge_index, data.edge_attr
-        # Compute the norms of each row
-        norms = torch.norm(x, dim=1, keepdim=True)
-        norms[norms == 0] = 1e-8
-        # Normalize each row
-        x = x.div(norms)
         x = self.conv1(x, edge_index, edge_attr)
         x = F.gelu(x)
-        #x = self.norm(x)
         x = self.conv2(x, edge_index, edge_attr)
         x = F.gelu(x)
-        #x = self.norm1(x)
         x = self.conv3(x, edge_index, edge_attr)
         x = F.gelu(x)
         return x
 
 class TraceGNN(torch.nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim, predict_graph=False, pool='add'):
+    def __init__(self, input_dim, hidden_dim, output_dim, predict_graph=True, pool='add'):
         super(TraceGNN, self).__init__()
         self.conv1 = GATConv(input_dim, hidden_dim)
         self.conv2 = GATConv(hidden_dim, hidden_dim)
+        self.conv3 = GATConv(hidden_dim, hidden_dim)
         self.predict_graph = predict_graph
         if self.predict_graph:
             self.fc = torch.nn.Linear(hidden_dim, output_dim)
@@ -56,11 +50,12 @@ class TraceGNN(torch.nn.Module):
         x = F.gelu(x)
         x = self.conv2(x, edge_index, edge_attr)
         x = F.gelu(x)
+        x = self.conv3(x, edge_index, edge_attr)
+        x = F.gelu(x)
         if self.predict_graph == False:
             #Start decoding
             row, col = edge_index
             x = torch.cat([x[row], x[col]], dim = -1)
-            # Fully connected layer
         else:
             if self.pool == 'mean':
                 x = global_mean_pool(x, batch)
@@ -68,9 +63,8 @@ class TraceGNN(torch.nn.Module):
                 x = global_add_pool(x, batch)
         # Fully connected layer
         x = self.fc(x)
-        x = F.gelu(x)
-        
-        return x.squeeze(dim=1)
+        x = F.leaky_relu(x, 0.01)
+        return x
     
 class EdgeGNNGRU(torch.nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim, predict_graph=True):

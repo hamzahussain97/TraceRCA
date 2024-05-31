@@ -7,7 +7,7 @@ Created on Mon Mar  4 13:57:41 2024
 """
 import torch
 #from ModelTrainer import prepare_data, train, predict, RRMSE, MBE, MAPE, ModelTrainer
-from ModelTrainer import ModelTrainer, predict, MAPE, quantile_loss, multi_quantile_loss
+from ModelTrainer import ModelTrainer, MAPE, quantile_loss, multi_quantile_loss
 from BaselineModel import GNN, EmbGNN, EmbNodeGNNGRU, EmbEdgeGNNGRU
 import warnings
 
@@ -34,7 +34,8 @@ normalize_by_node_features = ['cpu_use', 'mem_use_percent', 'net_send_rate', 'ne
 scale_features = ['latency']
 validate_on_trace = False
 
-quantiles = [0.0013, 0.0228, 0.1587, 0.5000, 0.8413, 0.9772, 0.9987]
+#quantiles = [0.0013, 0.0228, 0.05, 0.1587, 0.5000, 0.8413, 0.95, 0.9772, 0.9987]
+quantiles = [0.0014, 0.0028, 0.0401, 0.1057, 0.1587, 0.2266, 0.4013, 0.4602, 0.5000, 0.5398, 0.5987, 0.7733, 0.8413, 0.8944, 0.9600, 0.9772, 0.9987]
 model_trainer = ModelTrainer(data_dir, batch_size, quantiles, predict_graph, one_hot_enc=one_hot_enc,\
                              normalize_features=normalize_features,\
                              normalize_by_node_features=normalize_by_node_features,\
@@ -44,10 +45,10 @@ model_trainer = ModelTrainer(data_dir, batch_size, quantiles, predict_graph, one
 #total_traces = measures.index.get_level_values('trace_integer').max() + 1
 total_traces = 5
 # Initialize the model
-input_dim = 10 
+input_dim = 159
 hidden_dim = 128
 vocab_size = len(model_trainer.global_map)
-node_embedding_size = 10
+node_embedding_size = 30
 output_dim = len(quantiles)  # Assuming binary classification
 
 model = EmbGNN(input_dim, hidden_dim, vocab_size, total_traces, node_embedding_size, output_dim,\
@@ -55,7 +56,7 @@ model = EmbGNN(input_dim, hidden_dim, vocab_size, total_traces, node_embedding_s
 model_trainer.set_model(model)
 
 # Define Loss functions and optimizer
-epochs = 50
+epochs = 20
 loss = torch.nn.BCEWithLogitsLoss(reduction='mean')
 #loss = torch.nn.MSELoss(reduction='mean')
 criterion = torch.nn.L1Loss(reduction='mean')

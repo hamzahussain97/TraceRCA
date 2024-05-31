@@ -36,6 +36,7 @@ def prepare_metric_data(path, output_path, daterange):
         service_files = [file for file in all_files if service in file]
         # Filter files within the specified date range
         date_range_files = [file for file in service_files if daterange in file]
+        dataframes = []
         for idx, file in enumerate(date_range_files):
             df = read_file(os.path.join(path, file))
             dataframes.append(df)
@@ -160,5 +161,5 @@ if __name__ == "__main__":
     dataframes_2 = filter_time_range(dataframes_2)
     dataframes_2 = sum_by_timewindow(dataframes_2)
     write_to_file(dataframes_2, file_names_2, './data/')
-    dataframes = concat_dateranges(dataframes, dataframes_2)
+    #dataframes = concat_dateranges(dataframes, dataframes_2)
     
