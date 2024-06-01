@@ -21,7 +21,8 @@ def load_metrics(path):
     file_list = list(map(str, data_dir.glob("*07-15.csv")))
     metric_dict = {}
     for file_name in tqdm(file_list):
-        service_name = file_name.split('_')[0].split('\\')[-1]
+        file_name = Path(file_name)
+        service_name = file_name.stem.split('_')[0]
         df = pd.read_csv(file_name)
         df.set_index('timestamp', inplace=True)
         metric_dict[service_name] = df
@@ -33,7 +34,7 @@ def load_traces(path):
     traces = pd.DataFrame()
     for file_name in tqdm(file_list):
         with open(file_name, 'rb') as file:
-            file_data = pickle.load(file)
+            file_data = pd.read_pickle(file)
         df = pd.DataFrame(file_data)
         traces = pd.concat([traces,df])
     traces = traces.reset_index(drop=True)
