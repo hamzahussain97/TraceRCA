@@ -26,7 +26,7 @@ from torch_geometric.utils import to_networkx
 def prepare_data(path, normalize_features= [], normalize_by_node_features = [], scale_features = []):
     data = pd.DataFrame()
     data_dir = Path(path)
-    file_list = list(map(str, data_dir.glob("*.pkl")))
+    file_list = list(map(str, data_dir.glob("*admin-order_abort_1011.pkl")))
     '''
     ##################################################
     print("\n***********File List************")
@@ -431,9 +431,9 @@ def prepare_global_map(data):
     return global_map
 
 def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = []):
-    
     nodes = {'cpu_use': trace['cpu_use'], \
              'mem_use_percent': trace['mem_use_percent'],
+             'mem_use_amount': trace['mem_use_amount'],
              'net_send_rate': trace['net_send_rate'],
              'net_receive_rate': trace['net_receive_rate'],
              'file_read_rate': trace['file_read_rate']}
@@ -470,8 +470,8 @@ def prepare_graph(trace, global_map, one_hot_enc, normalize_by_node_features = [
     original = {'latency': trace['original_latency']}
     original = pd.DataFrame(original)
     
-    #trace_lat = y_edge_features.iloc[-1]
-    trace_lat = trace['max_latency']
+
+    trace_lat = y_edge_features['latency'].max()
     #Find all unique node names
     unique_nodes = pd.concat([edges['source'], edges['target']]).unique()
     
@@ -551,7 +551,7 @@ def preprocess(path, one_hot_enc = False, normalize_features = [], normalize_by_
     return data, graphs, global_map, measures
 
 if __name__ == "__main__":   
-    data, graphs, global_map, measures = preprocess('./A/microservice/test/', one_hot_enc=False, normalize_features=[], \
+    data, graphs, global_map, measures = preprocess('./TrainTicket/', one_hot_enc=False, normalize_features=[], \
     normalize_by_node_features=[])
     #normal = data[data['label'] != 1]
     #abnormal = data[data['label'] == 1]

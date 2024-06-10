@@ -28,7 +28,7 @@ from torchmetrics import MeanAbsolutePercentageError
 
 
 class ModelTrainer():
-    def __init__(self, data_dir, batch_size, quantiles=[], predict_graph=True, one_hot_enc=False, \
+    def __init__(self, path, batch_size, quantiles=[], predict_graph=True, one_hot_enc=False, \
                  normalize_features=[], normalize_by_node_features=[], \
                  scale_features=[], validate_on_trace=False):
         
@@ -42,22 +42,20 @@ class ModelTrainer():
         self.validate_on_trace=validate_on_trace
         
         assert not(self.predict_graph and self.validate_on_trace)
-        '''
-        path = './A/microservice/test/'
         
-        #Pass the directory that contains data as pickle files to the preprocessing function
-        data, graphs, global_map, measures = preprocess(path,\
-                                                        self.one_hot_enc,\
-                                                        self.normalize_features,\
-                                                        self.normalize_by_node_features,\
-                                                        self.scale_features)
-        
-        path = './Alibaba/'
-        data, graphs, global_map, measures = process_alibaba(path)
-        '''
-        
-        path = './MicroSS/'
-        data, graphs, global_map, measures = process_micross(path)
+        self.path = path
+        if 'TrainTicket' in  path:
+            #Pass the directory that contains data as pickle files to the preprocessing function
+            data, graphs, global_map, measures = preprocess(path,\
+                                                            self.one_hot_enc,\
+                                                            self.normalize_features,\
+                                                            self.normalize_by_node_features,\
+                                                            self.scale_features)
+        elif 'Alibaba' in path:
+            #Pass the directory containing the data folder that has pt files
+            data, graphs, global_map, measures = process_alibaba(path)
+        else:
+            data, graphs, global_map, measures = process_micross(path)
         
         if 'latency' in measures: measures = measures['latency']
         dataset = CustomDataset(graphs)
@@ -66,9 +64,6 @@ class ModelTrainer():
         train_size = int(0.8 * len(dataset))
         val_size = len(dataset) - train_size
         
-        # Split the dataset into training and validation sets
-        #train_dataset = torch.utils.data.Subset(dataset, range(train_size))
-        #val_dataset = torch.utils.data.Subset(dataset, range(train_size, len(dataset)))
         train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
         
         # Create DataLoaders for training and validation
@@ -213,10 +208,11 @@ def calculate_metrics(quantiles, target, predictions, epoch, epochs):
     for i, quantile in enumerate(quantiles):
         mape = MAPE(predictions[:,i], target)
         e_var = explained_variance(o_predictions[:,i], o_target)
-        qloss = quantile_loss(predictions[:,i], target, quantile)
+        qloss = quantile_loss(o_predictions[:,i], o_target, quantile)
+        print('***************************************************************')
         print(f"Quantile: {quantile}, Quantile Loss: {qloss}")
         print(f"Val MAPE: {mape:.4f}, Exp Var: {e_var:.4f}")
-        p_qloss = percentile_quantile_loss(predictions[:,i], target, quantile)
+        p_qloss = percentile_quantile_loss(o_predictions[:,i], o_target, quantile)
         print(f"Quantile Loss by percentiles: {', '.join(f'{tensor.item():.4f}' for tensor in p_qloss.values())}")
         p_mape = percentile_mape(target, predictions[:,i])
         print(f"MAPE by percentiles: {', '.join(f'{tensor.item():.4f}' for tensor in p_mape.values())}")
@@ -224,6 +220,12 @@ def calculate_metrics(quantiles, target, predictions, epoch, epochs):
         print(f"MAE by percentiles: {', '.join(f'{tensor.item():.4f}' for tensor in p_mae.values())}")
         if epoch == epochs: 
             plot(o_target, o_predictions[:,i], quantile)
+    if epoch == epochs:
+        p = percentiles(target, predictions)
+        p_values = p[100]['p']
+        print("\n")
+        print("Percentile Values In Validation Data")
+        print(p_values)
 
 def percentile_mape(target, predictions):
     p = percentiles(target,predictions)
@@ -278,6 +280,8 @@ def percentiles(x,y):
     percentile_90 = np.percentile(x, 90)
     percentile_95 = np.percentile(x, 95)
     
+    p_values = [percentile_10, percentile_25, percentile_50, percentile_75, percentile_90, percentile_95]
+    
     index_25 = np.where((x <= percentile_25))[0]
     index_50 = np.where((x > percentile_25) & (x <= percentile_50))[0]
     index_75 = np.where((x > percentile_50) & (x <= percentile_75))[0]
@@ -302,28 +306,28 @@ def percentiles(x,y):
     # Slice values based on percentiles
     x_25 = x[index_25]
     y_25 = y[index_25]
-    p_25 = {'x': x_25, 'y': y_25}
+    p_25 = {'x': x_25, 'y': y_25, 'p': p_values}
     percentiles[25] = p_25
     
     
     x_50 = x[index_50].flatten()
     y_50 = y[index_50].flatten()
-    p_50 = {'x': x_50, 'y': y_50}
+    p_50 = {'x': x_50, 'y': y_50, 'p': p_values}
     percentiles[50] = p_50
     
     x_75 = x[index_75].flatten()
     y_75 = y[index_75].flatten()
-    p_75 = {'x': x_75, 'y': y_75}
+    p_75 = {'x': x_75, 'y': y_75, 'p': p_values}
     percentiles[75] = p_75
     
     x_90 = x[index_90].flatten()
     y_90 = y[index_90].flatten()
-    p_90 = {'x': x_90, 'y': y_90}
+    p_90 = {'x': x_90, 'y': y_90, 'p': p_values}
     percentiles[90] = p_90
     
     #x_100 = x[index_100].flatten()
     #y_100 = y[index_100].flatten()
-    p_100 = {'x': x, 'y': y}
+    p_100 = {'x': x, 'y': y, 'p': p_values}
     percentiles[100] = p_100
     
     return percentiles
@@ -358,7 +362,7 @@ def plot_figure(i, p, u_l, quantile):
             
             plt.figure(i+2, figsize=(10, 6))  # Adjust the figure size as needed
             plt.hist(p[u_l]['y'], bins=30, color='skyblue', edgecolor='black')
-            plt.title('Distribution of Latencies')
+            plt.title('Distribution of Predicted {quantile}th quantile')
             plt.xlabel('Latency')
             plt.ylabel('Frequency')
             plt.grid(True)
@@ -387,7 +391,7 @@ def plot_percentiles(targets, predictions, quantiles):
     plt.xlabel('Target Latency')
     plt.ylabel('Prediction')
     plt.title('Plot of Predicted Percentiles against Target Latency')
-    plt.legend()
+    plt.legend(fontsize='xx-small', loc='upper right')
     
     plt.plot([min_val, max_val], [min_val, max_val], color='red', linestyle='--', label='y=x')
     # Show plot

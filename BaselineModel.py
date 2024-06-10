@@ -50,7 +50,7 @@ class GNN(torch.nn.Module):
 
 
 class EmbGNN(torch.nn.Module):
-    def __init__(self, input_dim, hidden_dim, vocab_size, total_traces, embedding_dim, output_dim, predict_graph=True, pool='add'):
+    def __init__(self, input_dim, hidden_dim, vocab_size, embedding_dim, output_dim, predict_graph=True, pool='add'):
         super(EmbGNN, self).__init__()
         self.embedding = Embedding(vocab_size, embedding_dim)
         self.conv1 = GATConv(input_dim+embedding_dim, hidden_dim)
@@ -68,12 +68,12 @@ class EmbGNN(torch.nn.Module):
         node_index = x[:,-1].long()
         emb_vecs = self.embedding(node_index)
         assert x.shape[0] == emb_vecs.shape[0]
-        x = x[:,:-1]
-        norms = torch.norm(x, dim=1, keepdim=True)
-        norms[norms == 0] = 1e-8
+        #x = x[:,:-1]
+        #norms = torch.norm(x, dim=1, keepdim=True)
+        #norms[norms == 0] = 1e-8
         # Normalize each row
-        x = x.div(norms)
-        x = torch.cat((x, emb_vecs), axis=1)
+        #x = x.div(norms)
+        x = torch.cat((x[:,:-1], emb_vecs), axis=1)
         x = self.conv1(x, edge_index, edge_attr)
         x = F.gelu(x)
         x = self.conv2(x, edge_index, edge_attr)
@@ -95,7 +95,7 @@ class EmbGNN(torch.nn.Module):
         return x
 
 class EmbEdgeGNNGRU(torch.nn.Module):
-    def __init__(self, input_dim, hidden_dim, vocab_size, total_traces, embedding_dim, output_dim, predict_graph=True):
+    def __init__(self, input_dim, hidden_dim, vocab_size, embedding_dim, output_dim, predict_graph=True):
         super(EmbEdgeGNNGRU, self).__init__()
         self.embedding = Embedding(vocab_size, embedding_dim)
         self.conv1 = GATConv(input_dim+embedding_dim, hidden_dim)
@@ -112,7 +112,13 @@ class EmbEdgeGNNGRU(torch.nn.Module):
         node_index = x[:,-1].long()
         emb_vecs = self.embedding(node_index)
         assert x.shape[0] == emb_vecs.shape[0]
+        #x = x[:,:-1]
+        #norms = torch.norm(x, dim=1, keepdim=True)
+        #norms[norms == 0] = 1e-8
+        # Normalize each row
+        #x = x.div(norms)
         x = torch.cat((x[:,:-1], emb_vecs), axis=1)
+        #x = torch.cat((x[:,:-1], emb_vecs), axis=1)
         x = self.conv1(x, edge_index, edge_attr)
         x = F.gelu(x)
         x = self.conv2(x, edge_index, edge_attr)

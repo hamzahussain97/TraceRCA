@@ -112,11 +112,25 @@ def construct_graph(metrics, trace, global_map):
     nodes = nodes.sort_values(by='node_id')
     nodes = nodes.drop(columns=['node_id'])
     
+    
+    
     nodes['node_name'] = nodes['node_name'].map(global_map)
     
     #Convert to tensors
     nodes_tensor = torch.tensor(nodes.values, dtype=torch.float32)
+    x = nodes_tensor[:,:-1]
+    norms = torch.norm(x, dim=1, keepdim=True)
+    norms[norms == 0] = 1e-8
+    # Normalize each row
+    x = x.div(norms)
+    nodes_tensor = torch.cat((x, nodes_tensor[:,-1]), axis=1)
+    
     edges_tensor = torch.tensor(edges.values, dtype=torch.long).t().contiguous()
+    max_value = edges_tensor.max().item()
+    node_size = nodes_tensor.shape[0]
+    #Check for Invalid Traces
+    if max_value >= node_size:
+        return
     y_edge_tensor = torch.tensor(y_edge_features.values, dtype=torch.float32).squeeze(dim=1)
     original = torch.tensor(original.values, dtype=torch.float32)
     trace_lat_tensor = torch.tensor(trace_lat, dtype=torch.float32)
