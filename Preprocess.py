@@ -26,7 +26,7 @@ from torch_geometric.utils import to_networkx
 def prepare_data(path, normalize_features= [], normalize_by_node_features = [], scale_features = []):
     data = pd.DataFrame()
     data_dir = Path(path)
-    file_list = list(map(str, data_dir.glob("*admin-order_abort_1011.pkl")))
+    file_list = list(map(str, data_dir.glob("*.pkl")))
     '''
     ##################################################
     print("\n***********File List************")
@@ -43,6 +43,9 @@ def prepare_data(path, normalize_features= [], normalize_by_node_features = [], 
             file_data = pickle.load(file)
         df = pd.DataFrame(file_data)
         df['latency'] = df['latency'].apply(lambda latencies: micro_to_mili(latencies))
+        df['max_latency'] = df['latency'].apply(lambda latencies: max(latencies))
+        df = df[df['max_latency'] <= 20000]
+        df = df[df['max_latency'] >= 1]
         df['original_latency'] = df['latency']
         df['timestamp'] = df['timestamp'].apply(lambda stamps: stamps_to_time(stamps))
         df['trace_integer'] = df.apply(lambda row: get_trace_integer(row, trace_to_integer), axis=1)

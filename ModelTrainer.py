@@ -203,23 +203,23 @@ def calculate_metrics(quantiles, target, predictions, epoch, epochs):
     o_target = target
     
     # Update predictions and target with 10 ** predictions and 10 ** target
-    predictions = 10 ** predictions
-    target = 10 ** target
+    #predictions = 10 ** predictions
+    #target = 10 ** target
     for i, quantile in enumerate(quantiles):
         mape = MAPE(predictions[:,i], target)
-        e_var = explained_variance(o_predictions[:,i], o_target)
-        qloss = quantile_loss(o_predictions[:,i], o_target, quantile)
+        e_var = explained_variance(predictions[:,i], target)
+        qloss = quantile_loss(predictions[:,i], target, quantile)
         print('***************************************************************')
         print(f"Quantile: {quantile}, Quantile Loss: {qloss}")
         print(f"Val MAPE: {mape:.4f}, Exp Var: {e_var:.4f}")
-        p_qloss = percentile_quantile_loss(o_predictions[:,i], o_target, quantile)
+        p_qloss = percentile_quantile_loss(predictions[:,i], target, quantile)
         print(f"Quantile Loss by percentiles: {', '.join(f'{tensor.item():.4f}' for tensor in p_qloss.values())}")
         p_mape = percentile_mape(target, predictions[:,i])
         print(f"MAPE by percentiles: {', '.join(f'{tensor.item():.4f}' for tensor in p_mape.values())}")
         p_mae = percentile_mae(target, predictions[:,i])
         print(f"MAE by percentiles: {', '.join(f'{tensor.item():.4f}' for tensor in p_mae.values())}")
         if epoch == epochs: 
-            plot(o_target, o_predictions[:,i], quantile)
+            plot(target, predictions[:,i], quantile)
     if epoch == epochs:
         p = percentiles(target, predictions)
         p_values = p[100]['p']
@@ -228,7 +228,7 @@ def calculate_metrics(quantiles, target, predictions, epoch, epochs):
         print(p_values)
 
 def percentile_mape(target, predictions):
-    p = percentiles(target,predictions)
+    p = percentiles(target,predictions, log_scale=True)
     
     m_25 = MAPE(torch.tensor(p[25]['y']),torch.tensor(p[25]['x']))
     m_50 = MAPE(torch.tensor(p[50]['y']),torch.tensor(p[50]['x']))
@@ -250,7 +250,7 @@ def percentile_mae(target, predictions):
     return {25: m_25, 50: m_50, 75: m_75, 90: m_90, 100:m_100}
 
 def percentile_quantile_loss(predictions, target, t_value):
-    p = percentiles(target, predictions)
+    p = percentiles(target, predictions, log_scale=True)
     m_25 = quantile_loss(torch.tensor(p[25]['y']),torch.tensor(p[25]['x']),t_value)
     m_50 = quantile_loss(torch.tensor(p[50]['y']),torch.tensor(p[50]['x']),t_value)
     m_75 = quantile_loss(torch.tensor(p[75]['y']),torch.tensor(p[75]['x']),t_value)
@@ -269,7 +269,15 @@ def coverage_probability(targets, predictions):
     # Return coverage probabilities
     return coverage_prob
 
-def percentiles(x,y):
+def percentiles(x,y, log_scale=False):
+    # Store the original values
+    o_x = x
+    o_y = y
+    
+    # Update predictions and target with 10 ** predictions and 10 ** target
+    x = 10 ** x
+    y = 10 ** y
+    
     x = x.numpy()
     y = y.numpy()
 
@@ -281,59 +289,77 @@ def percentiles(x,y):
     percentile_95 = np.percentile(x, 95)
     
     p_values = [percentile_10, percentile_25, percentile_50, percentile_75, percentile_90, percentile_95]
-    
+    '''
     index_25 = np.where((x <= percentile_25))[0]
     index_50 = np.where((x > percentile_25) & (x <= percentile_50))[0]
     index_75 = np.where((x > percentile_50) & (x <= percentile_75))[0]
     index_90 = np.where((x > percentile_75))[0]
     #index_100 = np.where((x <= 200000))[0]
+    '''
+    
+    index_25 = np.where((x <= 50))[0]
+    index_50 = np.where((x > 50) & (x <= 100))[0]
+    index_75 = np.where((x > 100) & (x <= 1000))[0]
+    index_90 = np.where((x > 10000))[0]
+    #index_100 = np.where((x <= 200000))[0]
     
     '''
-    index_25 = np.where((x <= 50))[0]
-    index_50 = np.where((x <= percentile_50))[0]
-    index_75 = np.where((x <= percentile_75))[0]
-    index_90 = np.where((x <= percentile_90))[0]
-    index_100 = np.where((x <= 200000))[0]
-    
-    
     index_25 = np.where((x <= 50))[0]
     index_50 = np.where((x > 50) & (x <= 100))[0]
     index_75 = np.where((x <= 200))[0]
     index_90 = np.where((x <= 1000))[0]
     index_100 = np.where((x > 1000))[0]
     '''
+    
+    if log_scale:
+        x_25 = o_x[index_25]
+        y_25 = o_y[index_25]
+        
+        x_50 = o_x[index_50].flatten()
+        y_50 = o_y[index_50].flatten()
+        
+        x_75 = o_x[index_75].flatten()
+        y_75 = o_y[index_75].flatten()
+        
+        x_90 = o_x[index_90].flatten()
+        y_90 = o_y[index_90].flatten()
+        
+        p_100 = {'x': o_x, 'y': o_y, 'p': p_values}
+    else:
+        x_25 = x[index_25]
+        y_25 = y[index_25]
+        
+        x_50 = x[index_50].flatten()
+        y_50 = y[index_50].flatten()
+        
+        x_75 = x[index_75].flatten()
+        y_75 = y[index_75].flatten()
+        
+        x_90 = x[index_90].flatten()
+        y_90 = y[index_90].flatten()
+        
+        p_100 = {'x': x, 'y': y, 'p': p_values}
+        
     percentiles = {}
     # Slice values based on percentiles
-    x_25 = x[index_25]
-    y_25 = y[index_25]
     p_25 = {'x': x_25, 'y': y_25, 'p': p_values}
     percentiles[25] = p_25
     
-    
-    x_50 = x[index_50].flatten()
-    y_50 = y[index_50].flatten()
     p_50 = {'x': x_50, 'y': y_50, 'p': p_values}
     percentiles[50] = p_50
     
-    x_75 = x[index_75].flatten()
-    y_75 = y[index_75].flatten()
     p_75 = {'x': x_75, 'y': y_75, 'p': p_values}
     percentiles[75] = p_75
     
-    x_90 = x[index_90].flatten()
-    y_90 = y[index_90].flatten()
     p_90 = {'x': x_90, 'y': y_90, 'p': p_values}
     percentiles[90] = p_90
     
-    #x_100 = x[index_100].flatten()
-    #y_100 = y[index_100].flatten()
-    p_100 = {'x': x, 'y': y, 'p': p_values}
     percentiles[100] = p_100
-    
+
     return percentiles
 
 def plot(x, y, quantile):
-    p = percentiles(x, y)
+    p = percentiles(x, y, log_scale=True)
     plot_figure(1, p, 25, quantile)
     plot_figure(2, p, 50, quantile)
     plot_figure(3, p, 75, quantile)
@@ -398,7 +424,8 @@ def plot_percentiles(targets, predictions, quantiles):
     plt.show()
     
     plt.figure(figsize=(10, 6))
-    mean_pred = predictions[:,3]
+    index = quantiles.index(0.5)
+    mean_pred = predictions[:,index]
     
     residuals = targets - np.array(mean_pred)[sorted_indexes]
     # Plot residual vs. fitted
