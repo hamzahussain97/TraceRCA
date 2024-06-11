@@ -40,12 +40,11 @@ model_trainer = ModelTrainer(data_dir, batch_size, quantiles, predict_graph, one
                              normalize_by_node_features=normalize_by_node_features,\
                              scale_features=scale_features, validate_on_trace=validate_on_trace)
 
-input_dim = model_trainer.graphs[0].x.size()[1] - 1
 #measures = model_trainer.measures['norm_by_trace']
 #total_traces = measures.index.get_level_values('trace_integer').max() + 1
 total_traces = 5
 # Initialize the model
-input_dim = 12
+input_dim = model_trainer.graphs[0].x.size()[1] - 1
 hidden_dim = 128
 vocab_size = len(model_trainer.global_map)
 node_embedding_size = 30
