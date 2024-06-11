@@ -4,3 +4,11 @@
 ########### E/ Validation on 2E Latencies                          ############
 ###############################################################################
 
+Normalizing traces
+
+********************************
+***Normalizing latency by trace***
+********************************
+
+Grouping by trace_id
+Ordering Rows
