@@ -30,7 +30,11 @@ def load_metrics(path):
 
 def load_traces(path):
     data_dir = Path(path)
-    file_list = list(map(str, data_dir.glob("*0.pkl")))
+    patterns = ["*2021-07-0*.pkl", "*2021-07-1[0-5].pkl"]
+    file_list = []
+    for pattern in patterns:
+        matching_files = list(map(str, data_dir.glob(pattern)))
+        file_list.extend(matching_files)
     traces = pd.DataFrame()
     for file_name in tqdm(file_list):
         with open(file_name, 'rb') as file:
@@ -123,7 +127,7 @@ def construct_graph(metrics, trace, global_map):
     norms[norms == 0] = 1e-8
     # Normalize each row
     x = x.div(norms)
-    nodes_tensor = torch.cat((x, nodes_tensor[:,-1]), axis=1)
+    nodes_tensor = torch.cat((x, nodes_tensor[:,-1].unsqueeze(1)), axis=1)
     
     edges_tensor = torch.tensor(edges.values, dtype=torch.long).t().contiguous()
     max_value = edges_tensor.max().item()
