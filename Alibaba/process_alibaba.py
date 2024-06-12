@@ -39,8 +39,8 @@ def process_alibaba(path):
         graph.x = x
         graph.y = np.log10(graph.y)
         graph.trace_lat = graph.y
-        #if graph.entry_id == 1:
-        graphs.append(graph)
+        if graph.y != 0:
+            graphs.append(graph)
         entry_ids.append(graph.entry_id.item())
     total_traces = len(graphs)
     print(f"Total number of traces: {total_traces}")

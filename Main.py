@@ -17,15 +17,15 @@ warnings.filterwarnings('ignore')
 
 trainer_text = """
 ###############################################################################
-########### GNN/GRU Hybrid Trained on Train Ticket Dataset         ############
-########### E/ Validation on 2E Latencies                          ############
+########### GNN Trained on Alibaba Dataset                         ############
+########### Validation on E2E Latencies                            ############
 ###############################################################################
 """
 print(trainer_text)
 
 # Initialize Model Trainer
 
-data_dir = './MicroSS/'
+data_dir = './Alibaba/'
 batch_size = 5
 predict_graph = True
 one_hot_enc = False
@@ -50,7 +50,7 @@ vocab_size = len(model_trainer.global_map)
 node_embedding_size = 30
 output_dim = len(quantiles)  # Assuming binary classification
 
-model = EmbGNN(input_dim, hidden_dim, vocab_size, node_embedding_size, output_dim,\
+model = EmbEdgeGNNGRU(input_dim, hidden_dim, vocab_size, node_embedding_size, output_dim,\
             predict_graph=model_trainer.predict_graph)
 model_trainer.set_model(model)
 
