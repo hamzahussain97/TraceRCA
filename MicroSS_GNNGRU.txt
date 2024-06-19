@@ -1,0 +1,498 @@
+Quantile Loss by percentiles: nan, nan, 0.0081, 0.0066, 0.0103
+MAPE by percentiles: nan, nan, 0.0109, 0.0100, 0.0173
+MAE by percentiles: nan, nan, 56.9348, 875.8320, 162.1925
+***************************************************************
+Quantile: 0.2266, Quantile Loss: 0.013102144934237003
+Val MAPE: 0.0156, Exp Var: 0.8168
+Quantile Loss by percentiles: nan, nan, 0.0093, 0.0086, 0.0131
+MAPE by percentiles: nan, nan, 0.0092, 0.0085, 0.0156
+MAE by percentiles: nan, nan, 48.5185, 553.8121, 147.7545
+***************************************************************
+Quantile: 0.3085, Quantile Loss: 0.016179358586668968
+Val MAPE: 0.0149, Exp Var: 0.8257
+Quantile Loss by percentiles: nan, nan, 0.0105, 0.0090, 0.0162
+MAPE by percentiles: nan, nan, 0.0088, 0.0069, 0.0149
+MAE by percentiles: nan, nan, 46.4256, 612.5882, 142.3627
+***************************************************************
+Quantile: 0.3539, Quantile Loss: 0.0175557229667902
+Val MAPE: 0.0144, Exp Var: 0.8267
+Quantile Loss by percentiles: nan, nan, 0.0109, 0.0094, 0.0176
+MAPE by percentiles: nan, nan, 0.0085, 0.0062, 0.0144
+MAE by percentiles: nan, nan, 44.4529, 550.4516, 138.2058
+***************************************************************
+Quantile: 0.4013, Quantile Loss: 0.018694736063480377
+Val MAPE: 0.0137, Exp Var: 0.8198
+Quantile Loss by percentiles: nan, nan, 0.0112, 0.0138, 0.0187
+MAPE by percentiles: nan, nan, 0.0081, 0.0082, 0.0137
+MAE by percentiles: nan, nan, 42.3814, 540.6217, 132.5350
+***************************************************************
+Quantile: 0.4503, Quantile Loss: 0.02004018798470497
+Val MAPE: 0.0137, Exp Var: 0.8285
+Quantile Loss by percentiles: nan, nan, 0.0115, 0.0090, 0.0200
+MAPE by percentiles: nan, nan, 0.0081, 0.0048, 0.0137
+MAE by percentiles: nan, nan, 42.7586, 437.4111, 131.4234
+***************************************************************
+Quantile: 0.5, Quantile Loss: 0.020700886845588684
+Val MAPE: 0.0132, Exp Var: 0.8236
+Quantile Loss by percentiles: nan, nan, 0.0116, 0.0123, 0.0207
+MAPE by percentiles: nan, nan, 0.0081, 0.0060, 0.0132
+MAE by percentiles: nan, nan, 42.6192, 378.2561, 127.1004
+***************************************************************
+Quantile: 0.5498, Quantile Loss: 0.02114378847181797
+Val MAPE: 0.0131, Exp Var: 0.8238
+Quantile Loss by percentiles: nan, nan, 0.0118, 0.0127, 0.0211
+MAPE by percentiles: nan, nan, 0.0085, 0.0057, 0.0131
+MAE by percentiles: nan, nan, 45.2197, 332.1733, 125.8042
+***************************************************************
+Quantile: 0.5987, Quantile Loss: 0.021565010771155357
+Val MAPE: 0.0132, Exp Var: 0.8309
+Quantile Loss by percentiles: nan, nan, 0.0118, 0.0090, 0.0216
+MAPE by percentiles: nan, nan, 0.0090, 0.0042, 0.0132
+MAE by percentiles: nan, nan, 48.1599, 366.8224, 126.8564
+***************************************************************
+Quantile: 0.6462, Quantile Loss: 0.021669209003448486
+Val MAPE: 0.0137, Exp Var: 0.8208
+Quantile Loss by percentiles: nan, nan, 0.0123, 0.0204, 0.0217
+MAPE by percentiles: nan, nan, 0.0107, 0.0089, 0.0137
+MAE by percentiles: nan, nan, 57.2119, 501.8290, 130.9386
+***************************************************************
+Quantile: 0.6915, Quantile Loss: 0.02125479467213154
+Val MAPE: 0.0147, Exp Var: 0.8330
+Quantile Loss by percentiles: nan, nan, 0.0131, 0.0100, 0.0213
+MAPE by percentiles: nan, nan, 0.0133, 0.0058, 0.0147
+MAE by percentiles: nan, nan, 74.1963, 561.5087, 139.8412
+***************************************************************
+Quantile: 0.7734, Quantile Loss: 0.019949665293097496
+Val MAPE: 0.0175, Exp Var: 0.8308
+Quantile Loss by percentiles: nan, nan, 0.0132, 0.0117, 0.0199
+MAPE by percentiles: nan, nan, 0.0187, 0.0080, 0.0175
+MAE by percentiles: nan, nan, 108.7483, 804.7078, 165.5266
+***************************************************************
+Quantile: 0.8413, Quantile Loss: 0.017720773816108704
+Val MAPE: 0.0204, Exp Var: 0.8175
+Quantile Loss by percentiles: nan, nan, 0.0118, 0.0140, 0.0177
+MAPE by percentiles: nan, nan, 0.0239, 0.0082, 0.0204
+MAE by percentiles: nan, nan, 144.2196, 686.2454, 191.0170
+***************************************************************
+Quantile: 0.9332, Quantile Loss: 0.011759564280509949
+Val MAPE: 0.0342, Exp Var: 0.7144
+Quantile Loss by percentiles: nan, nan, 0.0091, 0.0121, 0.0118
+MAPE by percentiles: nan, nan, 0.0453, 0.0146, 0.0342
+MAE by percentiles: nan, nan, 316.8320, 1547.9761, 339.1719
+***************************************************************
+Quantile: 0.9772, Quantile Loss: 0.006101214326918125
+Val MAPE: 0.0550, Exp Var: 0.5358
+Quantile Loss by percentiles: nan, nan, 0.0048, 0.0078, 0.0061
+MAPE by percentiles: nan, nan, 0.0716, 0.0312, 0.0550
+MAE by percentiles: nan, nan, 571.9188, 4000.4883, 612.4391
+***************************************************************
+Quantile: 0.9938, Quantile Loss: 0.002436542185023427
+Val MAPE: 0.1057, Exp Var: 0.4306
+Quantile Loss by percentiles: nan, nan, 0.0024, 0.0101, 0.0024
+MAPE by percentiles: nan, nan, 0.1321, 0.0353, 0.1057
+MAE by percentiles: nan, nan, 1260.6254, 4348.4873, 1398.9180
+***************************************************************
+Quantile: 0.9987, Quantile Loss: 0.0007149210432544351
+Val MAPE: 0.1349, Exp Var: 0.2501
+Quantile Loss by percentiles: nan, nan, 0.0006, 0.0094, 0.0007
+MAPE by percentiles: nan, nan, 0.1659, 0.0335, 0.1349
+MAE by percentiles: nan, nan, 1835.8346, 4155.6504, 2019.3552
+
+
+Epoch: 48/50, Train Loss: 0.2712, Train criterion: 0.0414, Val Loss: 0.2743, Val criterion: 0.0426, Val Cov Prob: 0.9972
+***************************************************************
+Quantile: 0.0013, Quantile Loss: 0.0002770099090412259
+Val MAPE: 0.0683, Exp Var: -0.5699
+Quantile Loss by percentiles: nan, nan, 0.0004, 0.0021, 0.0003
+MAPE by percentiles: nan, nan, 0.1031, 0.0463, 0.0683
+MAE by percentiles: nan, nan, 306.7502, 4138.4014, 411.0957
+***************************************************************
+Quantile: 0.0062, Quantile Loss: 0.0007664477452635765
+Val MAPE: 0.0340, Exp Var: 0.7729
+Quantile Loss by percentiles: nan, nan, 0.0008, 0.0008, 0.0008
+MAPE by percentiles: nan, nan, 0.0334, 0.0232, 0.0340
+MAE by percentiles: nan, nan, 162.8630, 2076.4475, 273.6844
+***************************************************************
+Quantile: 0.0228, Quantile Loss: 0.0023144972510635853
+Val MAPE: 0.0275, Exp Var: 0.7838
+Quantile Loss by percentiles: nan, nan, 0.0024, 0.0021, 0.0023
+MAPE by percentiles: nan, nan, 0.0241, 0.0225, 0.0275
+MAE by percentiles: nan, nan, 121.9799, 1775.8555, 233.6482
+***************************************************************
+Quantile: 0.0668, Quantile Loss: 0.0053962962701916695
+Val MAPE: 0.0211, Exp Var: 0.8030
+Quantile Loss by percentiles: nan, nan, 0.0053, 0.0048, 0.0054
+MAPE by percentiles: nan, nan, 0.0158, 0.0137, 0.0211
+MAE by percentiles: nan, nan, 80.4706, 1386.5226, 190.8008
+***************************************************************
+Quantile: 0.1587, Quantile Loss: 0.010615070350468159
+Val MAPE: 0.0145, Exp Var: 0.8199
+Quantile Loss by percentiles: nan, nan, 0.0094, 0.0063, 0.0106
+MAPE by percentiles: nan, nan, 0.0089, 0.0095, 0.0145
+MAE by percentiles: nan, nan, 46.5803, 797.4037, 140.6626
+***************************************************************
+Quantile: 0.2266, Quantile Loss: 0.013115247711539268
+Val MAPE: 0.0143, Exp Var: 0.8157
+Quantile Loss by percentiles: nan, nan, 0.0103, 0.0103, 0.0131
+MAPE by percentiles: nan, nan, 0.0087, 0.0110, 0.0143
+MAE by percentiles: nan, nan, 45.6810, 857.0713, 139.3596
+***************************************************************
+Quantile: 0.3085, Quantile Loss: 0.016198989003896713
+Val MAPE: 0.0133, Exp Var: 0.8238
+Quantile Loss by percentiles: nan, nan, 0.0122, 0.0084, 0.0162
+MAPE by percentiles: nan, nan, 0.0083, 0.0065, 0.0133
+MAE by percentiles: nan, nan, 43.8493, 562.3666, 129.1467
+***************************************************************
+Quantile: 0.3539, Quantile Loss: 0.017824390903115273
+Val MAPE: 0.0130, Exp Var: 0.8247
+Quantile Loss by percentiles: nan, nan, 0.0134, 0.0094, 0.0178
+MAPE by percentiles: nan, nan, 0.0086, 0.0064, 0.0130
+MAE by percentiles: nan, nan, 46.1046, 568.3688, 127.0078
+***************************************************************
+Quantile: 0.4013, Quantile Loss: 0.019925475120544434
+Val MAPE: 0.0133, Exp Var: 0.8154
+Quantile Loss by percentiles: nan, nan, 0.0155, 0.0133, 0.0199
+MAPE by percentiles: nan, nan, 0.0097, 0.0073, 0.0133
+MAE by percentiles: nan, nan, 52.6607, 383.6231, 127.4206
+***************************************************************
+Quantile: 0.4503, Quantile Loss: 0.021492384374141693
+Val MAPE: 0.0138, Exp Var: 0.8269
+Quantile Loss by percentiles: nan, nan, 0.0171, 0.0066, 0.0215
+MAPE by percentiles: nan, nan, 0.0111, 0.0032, 0.0138
+MAE by percentiles: nan, nan, 61.2088, 298.6868, 131.4117
+***************************************************************
+Quantile: 0.5, Quantile Loss: 0.021277202293276787
+Val MAPE: 0.0137, Exp Var: 0.8251
+Quantile Loss by percentiles: nan, nan, 0.0153, 0.0107, 0.0213
+MAPE by percentiles: nan, nan, 0.0107, 0.0052, 0.0137
+MAE by percentiles: nan, nan, 58.4139, 372.1571, 130.2614
+***************************************************************
+Quantile: 0.5498, Quantile Loss: 0.02170507423579693
+Val MAPE: 0.0140, Exp Var: 0.8229
+Quantile Loss by percentiles: nan, nan, 0.0153, 0.0125, 0.0217
+MAPE by percentiles: nan, nan, 0.0116, 0.0057, 0.0140
+MAE by percentiles: nan, nan, 63.3401, 341.0272, 132.3230
+***************************************************************
+Quantile: 0.5987, Quantile Loss: 0.02219233103096485
+Val MAPE: 0.0149, Exp Var: 0.8316
+Quantile Loss by percentiles: nan, nan, 0.0162, 0.0078, 0.0222
+MAPE by percentiles: nan, nan, 0.0136, 0.0034, 0.0149
+MAE by percentiles: nan, nan, 75.7280, 309.2665, 139.7754
+***************************************************************
+Quantile: 0.6462, Quantile Loss: 0.02176864631474018
+Val MAPE: 0.0149, Exp Var: 0.8209
+Quantile Loss by percentiles: nan, nan, 0.0149, 0.0184, 0.0218
+MAPE by percentiles: nan, nan, 0.0140, 0.0076, 0.0149
+MAE by percentiles: nan, nan, 78.0039, 365.5851, 139.9740
+***************************************************************
+Quantile: 0.6915, Quantile Loss: 0.021202879026532173
+Val MAPE: 0.0151, Exp Var: 0.8328
+Quantile Loss by percentiles: nan, nan, 0.0143, 0.0072, 0.0212
+MAPE by percentiles: nan, nan, 0.0151, 0.0030, 0.0151
+MAE by percentiles: nan, nan, 85.7444, 270.7002, 140.9996
+***************************************************************
+Quantile: 0.7734, Quantile Loss: 0.01985115557909012
+Val MAPE: 0.0162, Exp Var: 0.8332
+Quantile Loss by percentiles: nan, nan, 0.0127, 0.0135, 0.0199
+MAPE by percentiles: nan, nan, 0.0183, 0.0045, 0.0162
+MAE by percentiles: nan, nan, 105.9255, 401.0965, 149.8537
+***************************************************************
+Quantile: 0.8413, Quantile Loss: 0.017588702961802483
+Val MAPE: 0.0207, Exp Var: 0.8266
+Quantile Loss by percentiles: nan, nan, 0.0125, 0.0079, 0.0176
+MAPE by percentiles: nan, nan, 0.0262, 0.0038, 0.0207
+MAE by percentiles: nan, nan, 158.9837, 347.1373, 188.6763
+***************************************************************
+Quantile: 0.9332, Quantile Loss: 0.011699619702994823
+Val MAPE: 0.0343, Exp Var: 0.7300
+Quantile Loss by percentiles: nan, nan, 0.0093, 0.0107, 0.0117
+MAPE by percentiles: nan, nan, 0.0467, 0.0099, 0.0343
+MAE by percentiles: nan, nan, 322.4481, 990.5155, 331.2349
+***************************************************************
+Quantile: 0.9772, Quantile Loss: 0.005983466282486916
+Val MAPE: 0.0517, Exp Var: 0.5903
+Quantile Loss by percentiles: nan, nan, 0.0049, 0.0070, 0.0060
+MAPE by percentiles: nan, nan, 0.0738, 0.0217, 0.0517
+MAE by percentiles: nan, nan, 573.3465, 2640.7825, 540.5155
+***************************************************************
+Quantile: 0.9938, Quantile Loss: 0.0024055985268205404
+Val MAPE: 0.0881, Exp Var: 0.3900
+Quantile Loss by percentiles: nan, nan, 0.0021, 0.0083, 0.0024
+MAPE by percentiles: nan, nan, 0.1167, 0.0240, 0.0881
+MAE by percentiles: nan, nan, 1061.0232, 2802.8662, 1086.0691
+***************************************************************
+Quantile: 0.9987, Quantile Loss: 0.0007270804489962757
+Val MAPE: 0.1303, Exp Var: 0.2791
+Quantile Loss by percentiles: nan, nan, 0.0006, 0.0087, 0.0007
+MAPE by percentiles: nan, nan, 0.1622, 0.0264, 0.1303
+MAE by percentiles: nan, nan, 1754.9946, 3146.5974, 1892.2778
+
+
+Epoch: 49/50, Train Loss: 0.2708, Train criterion: 0.0413, Val Loss: 0.2685, Val criterion: 0.0411, Val Cov Prob: 0.9968
+***************************************************************
+Quantile: 0.0013, Quantile Loss: 0.0002916209341492504
+Val MAPE: 0.0648, Exp Var: -0.6143
+Quantile Loss by percentiles: nan, nan, 0.0004, 0.0055, 0.0003
+MAPE by percentiles: nan, nan, 0.1003, 0.0533, 0.0648
+MAE by percentiles: nan, nan, 298.7849, 5408.1919, 389.6778
+***************************************************************
+Quantile: 0.0062, Quantile Loss: 0.0007622010889463127
+Val MAPE: 0.0339, Exp Var: 0.7734
+Quantile Loss by percentiles: nan, nan, 0.0007, 0.0011, 0.0008
+MAPE by percentiles: nan, nan, 0.0310, 0.0175, 0.0339
+MAE by percentiles: nan, nan, 154.5159, 1567.8658, 272.0841
+***************************************************************
+Quantile: 0.0228, Quantile Loss: 0.0023361744824796915
+Val MAPE: 0.0292, Exp Var: 0.7838
+Quantile Loss by percentiles: nan, nan, 0.0022, 0.0017, 0.0023
+MAPE by percentiles: nan, nan, 0.0247, 0.0182, 0.0292
+MAE by percentiles: nan, nan, 126.7337, 1358.6648, 244.2154
+***************************************************************
+Quantile: 0.0668, Quantile Loss: 0.005641189869493246
+Val MAPE: 0.0243, Exp Var: 0.8047
+Quantile Loss by percentiles: nan, nan, 0.0049, 0.0034, 0.0056
+MAPE by percentiles: nan, nan, 0.0179, 0.0094, 0.0243
+MAE by percentiles: nan, nan, 91.5766, 919.8808, 212.4787
+***************************************************************
+Quantile: 0.1587, Quantile Loss: 0.010462776757776737
+Val MAPE: 0.0179, Exp Var: 0.8214
+Quantile Loss by percentiles: nan, nan, 0.0080, 0.0103, 0.0105
+MAPE by percentiles: nan, nan, 0.0105, 0.0062, 0.0179
+MAE by percentiles: nan, nan, 54.6306, 462.4352, 166.5804
+***************************************************************
+Quantile: 0.2266, Quantile Loss: 0.013127709738910198
+Val MAPE: 0.0154, Exp Var: 0.8159
+Quantile Loss by percentiles: nan, nan, 0.0095, 0.0091, 0.0131
+MAPE by percentiles: nan, nan, 0.0085, 0.0065, 0.0154
+MAE by percentiles: nan, nan, 44.3757, 350.9522, 146.5202
+***************************************************************
+Quantile: 0.3085, Quantile Loss: 0.015959858894348145
+Val MAPE: 0.0139, Exp Var: 0.8253
+Quantile Loss by percentiles: nan, nan, 0.0111, 0.0097, 0.0160
+MAPE by percentiles: nan, nan, 0.0080, 0.0049, 0.0139
+MAE by percentiles: nan, nan, 41.7759, 415.2092, 134.3940
+***************************************************************
+Quantile: 0.3539, Quantile Loss: 0.01739167422056198
+Val MAPE: 0.0135, Exp Var: 0.8266
+Quantile Loss by percentiles: nan, nan, 0.0121, 0.0121, 0.0174
+MAPE by percentiles: nan, nan, 0.0081, 0.0056, 0.0135
+MAE by percentiles: nan, nan, 42.5001, 505.4337, 131.0090
+***************************************************************
+Quantile: 0.4013, Quantile Loss: 0.018633803352713585
+Val MAPE: 0.0134, Exp Var: 0.8204
+Quantile Loss by percentiles: nan, nan, 0.0121, 0.0150, 0.0186
+MAPE by percentiles: nan, nan, 0.0081, 0.0075, 0.0134
+MAE by percentiles: nan, nan, 42.6710, 490.5613, 130.4667
+***************************************************************
+Quantile: 0.4503, Quantile Loss: 0.019659603014588356
+Val MAPE: 0.0132, Exp Var: 0.8292
+Quantile Loss by percentiles: nan, nan, 0.0124, 0.0103, 0.0197
+MAPE by percentiles: nan, nan, 0.0084, 0.0049, 0.0132
+MAE by percentiles: nan, nan, 44.3463, 465.1717, 128.0655
+***************************************************************
+Quantile: 0.5, Quantile Loss: 0.020541245117783546
+Val MAPE: 0.0131, Exp Var: 0.8239
+Quantile Loss by percentiles: nan, nan, 0.0129, 0.0166, 0.0205
+MAPE by percentiles: nan, nan, 0.0090, 0.0080, 0.0131
+MAE by percentiles: nan, nan, 48.0110, 611.9839, 127.5230
+***************************************************************
+Quantile: 0.5498, Quantile Loss: 0.021211855113506317
+Val MAPE: 0.0131, Exp Var: 0.8252
+Quantile Loss by percentiles: nan, nan, 0.0126, 0.0153, 0.0212
+MAPE by percentiles: nan, nan, 0.0093, 0.0074, 0.0131
+MAE by percentiles: nan, nan, 49.8606, 528.1413, 127.0429
+***************************************************************
+Quantile: 0.5987, Quantile Loss: 0.021592222154140472
+Val MAPE: 0.0132, Exp Var: 0.8327
+Quantile Loss by percentiles: nan, nan, 0.0126, 0.0076, 0.0216
+MAPE by percentiles: nan, nan, 0.0101, 0.0035, 0.0132
+MAE by percentiles: nan, nan, 54.8094, 304.7444, 126.7470
+***************************************************************
+Quantile: 0.6462, Quantile Loss: 0.021651722490787506
+Val MAPE: 0.0136, Exp Var: 0.8230
+Quantile Loss by percentiles: nan, nan, 0.0128, 0.0245, 0.0217
+MAPE by percentiles: nan, nan, 0.0115, 0.0121, 0.0136
+MAE by percentiles: nan, nan, 63.3829, 869.5376, 132.1586
+***************************************************************
+Quantile: 0.6915, Quantile Loss: 0.021180525422096252
+Val MAPE: 0.0147, Exp Var: 0.8346
+Quantile Loss by percentiles: nan, nan, 0.0135, 0.0139, 0.0212
+MAPE by percentiles: nan, nan, 0.0142, 0.0089, 0.0147
+MAE by percentiles: nan, nan, 79.7814, 917.9428, 140.7533
+***************************************************************
+Quantile: 0.7734, Quantile Loss: 0.01983717456459999
+Val MAPE: 0.0172, Exp Var: 0.8333
+Quantile Loss by percentiles: nan, nan, 0.0137, 0.0137, 0.0198
+MAPE by percentiles: nan, nan, 0.0199, 0.0102, 0.0172
+MAE by percentiles: nan, nan, 116.3929, 1061.7401, 162.1119
+***************************************************************
+Quantile: 0.8413, Quantile Loss: 0.017604263499379158
+Val MAPE: 0.0208, Exp Var: 0.8263
+Quantile Loss by percentiles: nan, nan, 0.0126, 0.0108, 0.0176
+MAPE by percentiles: nan, nan, 0.0266, 0.0075, 0.0208
+MAE by percentiles: nan, nan, 160.3725, 713.1295, 191.2434
+***************************************************************
+Quantile: 0.9332, Quantile Loss: 0.011545591056346893
+Val MAPE: 0.0334, Exp Var: 0.7272
+Quantile Loss by percentiles: nan, nan, 0.0093, 0.0106, 0.0115
+MAPE by percentiles: nan, nan, 0.0468, 0.0101, 0.0334
+MAE by percentiles: nan, nan, 323.4591, 1025.3398, 321.8290
+***************************************************************
+Quantile: 0.9772, Quantile Loss: 0.006035389844328165
+Val MAPE: 0.0485, Exp Var: 0.5565
+Quantile Loss by percentiles: nan, nan, 0.0047, 0.0074, 0.0060
+MAPE by percentiles: nan, nan, 0.0696, 0.0174, 0.0485
+MAE by percentiles: nan, nan, 542.6063, 2068.3848, 507.8626
+***************************************************************
+Quantile: 0.9938, Quantile Loss: 0.0023581257555633783
+Val MAPE: 0.0950, Exp Var: 0.4255
+Quantile Loss by percentiles: nan, nan, 0.0023, 0.0117, 0.0024
+MAPE by percentiles: nan, nan, 0.1264, 0.0311, 0.0950
+MAE by percentiles: nan, nan, 1176.9728, 3666.9053, 1183.1259
+***************************************************************
+Quantile: 0.9987, Quantile Loss: 0.0006931198295205832
+Val MAPE: 0.1407, Exp Var: 0.3266
+Quantile Loss by percentiles: nan, nan, 0.0006, 0.0095, 0.0007
+MAPE by percentiles: nan, nan, 0.1727, 0.0263, 0.1407
+MAE by percentiles: nan, nan, 1931.8544, 3107.3845, 2119.5864
+
+
+Epoch: 50/50, Train Loss: 0.2707, Train criterion: 0.0413, Val Loss: 0.2689, Val criterion: 0.0413, Val Cov Prob: 0.9976
+***************************************************************
+Quantile: 0.0013, Quantile Loss: 0.00029140067636035383
+Val MAPE: 0.0688, Exp Var: -0.6295
+Quantile Loss by percentiles: nan, nan, 0.0004, 0.0044, 0.0003
+MAPE by percentiles: nan, nan, 0.1041, 0.0725, 0.0688
+MAE by percentiles: nan, nan, 310.0804, 5985.7930, 418.3682
+***************************************************************
+Quantile: 0.0062, Quantile Loss: 0.0008221468888223171
+Val MAPE: 0.0415, Exp Var: 0.7601
+Quantile Loss by percentiles: nan, nan, 0.0008, 0.0012, 0.0008
+MAPE by percentiles: nan, nan, 0.0410, 0.0216, 0.0415
+MAE by percentiles: nan, nan, 197.7418, 1944.4586, 320.6962
+***************************************************************
+Quantile: 0.0228, Quantile Loss: 0.0023660052102059126
+Val MAPE: 0.0294, Exp Var: 0.7723
+Quantile Loss by percentiles: nan, nan, 0.0022, 0.0016, 0.0024
+MAPE by percentiles: nan, nan, 0.0275, 0.0105, 0.0294
+MAE by percentiles: nan, nan, 138.7272, 609.7971, 237.2835
+***************************************************************
+Quantile: 0.0668, Quantile Loss: 0.005475812591612339
+Val MAPE: 0.0224, Exp Var: 0.7995
+Quantile Loss by percentiles: nan, nan, 0.0050, 0.0045, 0.0055
+MAPE by percentiles: nan, nan, 0.0182, 0.0100, 0.0224
+MAE by percentiles: nan, nan, 92.3914, 986.6484, 195.3638
+***************************************************************
+Quantile: 0.1587, Quantile Loss: 0.010367999784648418
+Val MAPE: 0.0156, Exp Var: 0.8208
+Quantile Loss by percentiles: nan, nan, 0.0082, 0.0156, 0.0104
+MAPE by percentiles: nan, nan, 0.0098, 0.0074, 0.0156
+MAE by percentiles: nan, nan, 50.2600, 585.7306, 146.5857
+***************************************************************
+Quantile: 0.2266, Quantile Loss: 0.013161438517272472
+Val MAPE: 0.0152, Exp Var: 0.8155
+Quantile Loss by percentiles: nan, nan, 0.0094, 0.0124, 0.0132
+MAPE by percentiles: nan, nan, 0.0095, 0.0072, 0.0152
+MAE by percentiles: nan, nan, 49.2857, 437.7394, 142.4440
+***************************************************************
+Quantile: 0.3085, Quantile Loss: 0.016023125499486923
+Val MAPE: 0.0137, Exp Var: 0.8246
+Quantile Loss by percentiles: nan, nan, 0.0106, 0.0133, 0.0160
+MAPE by percentiles: nan, nan, 0.0083, 0.0061, 0.0137
+MAE by percentiles: nan, nan, 43.2463, 557.3433, 132.0563
+***************************************************************
+Quantile: 0.3539, Quantile Loss: 0.017383968457579613
+Val MAPE: 0.0135, Exp Var: 0.8259
+Quantile Loss by percentiles: nan, nan, 0.0111, 0.0191, 0.0174
+MAPE by percentiles: nan, nan, 0.0081, 0.0082, 0.0135
+MAE by percentiles: nan, nan, 42.4630, 807.8739, 131.3896
+***************************************************************
+Quantile: 0.4013, Quantile Loss: 0.01856573112308979
+Val MAPE: 0.0131, Exp Var: 0.8191
+Quantile Loss by percentiles: nan, nan, 0.0117, 0.0199, 0.0186
+MAPE by percentiles: nan, nan, 0.0081, 0.0095, 0.0131
+MAE by percentiles: nan, nan, 42.4688, 702.6865, 128.3290
+***************************************************************
+Quantile: 0.4503, Quantile Loss: 0.01958816684782505
+Val MAPE: 0.0131, Exp Var: 0.8276
+Quantile Loss by percentiles: nan, nan, 0.0119, 0.0114, 0.0196
+MAPE by percentiles: nan, nan, 0.0082, 0.0054, 0.0131
+MAE by percentiles: nan, nan, 43.3793, 525.5294, 126.8934
+***************************************************************
+Quantile: 0.5, Quantile Loss: 0.020659061148762703
+Val MAPE: 0.0132, Exp Var: 0.8230
+Quantile Loss by percentiles: nan, nan, 0.0127, 0.0233, 0.0207
+MAPE by percentiles: nan, nan, 0.0088, 0.0114, 0.0132
+MAE by percentiles: nan, nan, 47.2698, 1023.3041, 130.4794
+***************************************************************
+Quantile: 0.5498, Quantile Loss: 0.021119333803653717
+Val MAPE: 0.0133, Exp Var: 0.8239
+Quantile Loss by percentiles: nan, nan, 0.0124, 0.0210, 0.0211
+MAPE by percentiles: nan, nan, 0.0091, 0.0105, 0.0133
+MAE by percentiles: nan, nan, 48.8765, 897.0294, 130.2347
+***************************************************************
+Quantile: 0.5987, Quantile Loss: 0.021750716492533684
+Val MAPE: 0.0142, Exp Var: 0.8311
+Quantile Loss by percentiles: nan, nan, 0.0138, 0.0190, 0.0218
+MAPE by percentiles: nan, nan, 0.0114, 0.0107, 0.0142
+MAE by percentiles: nan, nan, 62.4719, 1138.6980, 139.9408
+***************************************************************
+Quantile: 0.6462, Quantile Loss: 0.021717512980103493
+Val MAPE: 0.0148, Exp Var: 0.8215
+Quantile Loss by percentiles: nan, nan, 0.0141, 0.0273, 0.0217
+MAPE by percentiles: nan, nan, 0.0129, 0.0140, 0.0148
+MAE by percentiles: nan, nan, 71.9161, 1098.5464, 143.9380
+***************************************************************
+Quantile: 0.6915, Quantile Loss: 0.021249691024422646
+Val MAPE: 0.0154, Exp Var: 0.8331
+Quantile Loss by percentiles: nan, nan, 0.0140, 0.0131, 0.0212
+MAPE by percentiles: nan, nan, 0.0148, 0.0084, 0.0154
+MAE by percentiles: nan, nan, 83.4516, 865.5402, 148.0612
+***************************************************************
+Quantile: 0.7734, Quantile Loss: 0.01992221735417843
+Val MAPE: 0.0181, Exp Var: 0.8317
+Quantile Loss by percentiles: nan, nan, 0.0136, 0.0168, 0.0199
+MAPE by percentiles: nan, nan, 0.0197, 0.0137, 0.0181
+MAE by percentiles: nan, nan, 115.0052, 1495.6498, 174.1305
+***************************************************************
+Quantile: 0.8413, Quantile Loss: 0.017621764913201332
+Val MAPE: 0.0215, Exp Var: 0.8209
+Quantile Loss by percentiles: nan, nan, 0.0127, 0.0138, 0.0176
+MAPE by percentiles: nan, nan, 0.0267, 0.0133, 0.0215
+MAE by percentiles: nan, nan, 161.1579, 1422.1445, 203.7918
+***************************************************************
+Quantile: 0.9332, Quantile Loss: 0.011687989346683025
+Val MAPE: 0.0395, Exp Var: 0.6911
+Quantile Loss by percentiles: nan, nan, 0.0110, 0.0124, 0.0117
+MAPE by percentiles: nan, nan, 0.0562, 0.0188, 0.0395
+MAE by percentiles: nan, nan, 403.5189, 2089.9038, 389.9942
+***************************************************************
+Quantile: 0.9772, Quantile Loss: 0.0058510624803602695
+Val MAPE: 0.0541, Exp Var: 0.5130
+Quantile Loss by percentiles: nan, nan, 0.0052, 0.0070, 0.0059
+MAPE by percentiles: nan, nan, 0.0761, 0.0308, 0.0541
+MAE by percentiles: nan, nan, 614.3403, 3918.3276, 589.5709
+***************************************************************
+Quantile: 0.9938, Quantile Loss: 0.0026244265027344227
+Val MAPE: 0.0758, Exp Var: 0.2782
+Quantile Loss by percentiles: nan, nan, 0.0021, 0.0122, 0.0026
+MAPE by percentiles: nan, nan, 0.1157, 0.0094, 0.0758
+MAE by percentiles: nan, nan, 1052.3075, 857.0099, 860.5021
+***************************************************************
+Quantile: 0.9987, Quantile Loss: 0.0007066278485581279
+Val MAPE: 0.1381, Exp Var: 0.1545
+Quantile Loss by percentiles: nan, nan, 0.0007, 0.0083, 0.0007
+MAPE by percentiles: nan, nan, 0.1782, 0.0386, 0.1381
+MAE by percentiles: nan, nan, 2088.0476, 4941.9956, 2074.4475
+
+
+Percentile Values In Validation Data
+[779.4185180664062, 915.0457763671875, 1208.442626953125, 1450.6697998046875, 1641.4119262695312, 1822.0754699707031]
+
+
+*************Prediction*************
+tensor([[2.7295, 2.7574, 2.8056, 2.8432, 2.9035, 2.9067, 2.9201, 2.9239, 2.9303,
+         2.9320, 2.9412, 2.9460, 2.9584, 2.9744, 2.9855, 3.0219, 3.0601, 3.2233,
+         3.3324, 3.4397, 3.6689]])
+***************Actual***************
+[tensor(2.8917)]

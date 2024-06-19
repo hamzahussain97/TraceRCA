@@ -34,6 +34,11 @@ def process_alibaba(path):
         # Map ms_ids to their corresponding integers
         mapped_ms_ids = torch.tensor([ms_id_to_int[ms_id.item()] for ms_id in ms_ids], dtype=torch.float)
         
+        norms = torch.norm(x, dim=1, keepdim=True)
+        norms[norms == 0] = 1e-8
+        # Normalize each row
+        x = x.div(norms)
+        
         # add ms_ids at the end of the node features
         x = torch.cat((x, mapped_ms_ids.unsqueeze(1)), axis=1)
         graph.x = x

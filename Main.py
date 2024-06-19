@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 
 trainer_text = """
 ###############################################################################
-########### GNN Trained on Alibaba Dataset                         ############
+########### GNN/GRU Trained on MicroSS Dataset                     ############
 ########### Validation on E2E Latencies                            ############
 ###############################################################################
 """
@@ -25,7 +25,7 @@ print(trainer_text)
 
 # Initialize Model Trainer
 
-da= './Alibaba/'
+data_dir = './MicroSS/'
 batch_size = 5
 predict_graph = True
 one_hot_enc = False
