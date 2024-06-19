@@ -17,8 +17,8 @@ warnings.filterwarnings('ignore')
 
 trainer_text = """
 ###############################################################################
-########### GNN/GRU Hybrid Trained on Train Ticket Dataset         ############
-########### E/ Validation on 2E Latencies                          ############
+########### GNN Trained on Micross Dataset                         ############
+########### / Validation on E2E Latencies                          ############
 ###############################################################################
 """
 print(trainer_text)
