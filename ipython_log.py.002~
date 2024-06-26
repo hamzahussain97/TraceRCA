@@ -1,5 +1,0 @@
-# IPython log file
-
-runfile('/home/hamza/Hamza/TraceRCA/Main.py', wdir='/home/hamza/Hamza/TraceRCA', current_namespace=True)
-get_ipython().run_line_magic('logtop', '')
-get_ipython().run_line_magic('logstop', '')

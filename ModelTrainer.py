@@ -409,8 +409,9 @@ def plot_percentiles(targets, predictions, quantiles):
     sorted_indexes = np.argsort(targets)
     targets = np.array(targets)[sorted_indexes]
     for i, percentile_values in enumerate(percentiles):
-        percentile_values = np.array(percentile_values)[sorted_indexes]
-        plt.plot(targets, percentile_values, c=colors[i], label=f'{quantiles[i]}th Percentile')
+        if quantiles[i] != 0.0013 and quantiles[i] != 0.9987:
+            percentile_values = np.array(percentile_values)[sorted_indexes]
+            plt.plot(targets, percentile_values, c=colors[i], label=f'{quantiles[i]}th Percentile')
     
     # Add labels and legend
     plt.grid(True)

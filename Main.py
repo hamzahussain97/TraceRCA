@@ -18,16 +18,20 @@ warnings.filterwarnings('ignore')
 trainer_text = """
 ###############################################################################
 ########### GNN/GRU Trained on MicroSS Dataset                     ############
-########### Validation on E2E Latencies                            ############
+########### Validation on Edge Latencies                           ############
 ###############################################################################
 """
 print(trainer_text)
 
 # Initialize Model Trainer
 
+<<<<<<< HEAD
 data_dir = './Alibaba/'
+=======
+data_dir = './TrainTicket/'
+>>>>>>> 3d5d2af95a49edc5d30f2b87ae03bce8b7eb03ad
 batch_size = 5
-predict_graph = True
+predict_graph = False
 one_hot_enc = False
 normalize_features = ['cpu_use', 'mem_use_percent', 'mem_use_amount', 'net_send_rate', 'net_receive_rate', 'file_read_rate']
 normalize_by_node_features = ['cpu_use', 'mem_use_percent', 'mem_use_amount', 'net_send_rate', 'net_receive_rate', 'file_read_rate']
@@ -55,7 +59,7 @@ model = EmbGNN(input_dim, hidden_dim, vocab_size, node_embedding_size, output_di
 model_trainer.set_model(model)
 
 # Define Loss functions and optimizer
-epochs = 50
+epochs = 20
 loss = torch.nn.BCEWithLogitsLoss(reduction='mean')
 #loss = torch.nn.MSELoss(reduction='mean')
 criterion = torch.nn.L1Loss(reduction='mean')
