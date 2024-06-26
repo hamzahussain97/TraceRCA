@@ -30,7 +30,7 @@ def load_metrics(path):
 
 def load_traces(path):
     data_dir = Path(path)
-    patterns = ["*2021-07-0*.pkl", "*2021-07-1[0-5].pkl"]
+    patterns = ["*2021-07-01.pkl"]
     file_list = []
     for pattern in patterns:
         matching_files = list(map(str, data_dir.glob(pattern)))
