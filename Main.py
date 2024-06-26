@@ -18,14 +18,14 @@ warnings.filterwarnings('ignore')
 trainer_text = """
 ###############################################################################
 ########### GNN/GRU Trained on MicroSS Dataset                     ############
-########### Validation on E2E Latencies                            ############
+########### Validation on Edge Latencies                           ############
 ###############################################################################
 """
 print(trainer_text)
 
 # Initialize Model Trainer
 
-data_dir = './MicroSS/'
+data_dir = './TrainTicket/'
 batch_size = 5
 predict_graph = True
 one_hot_enc = False
@@ -55,7 +55,7 @@ model = EmbEdgeGNNGRU(input_dim, hidden_dim, vocab_size, node_embedding_size, ou
 model_trainer.set_model(model)
 
 # Define Loss functions and optimizer
-epochs = 50
+epochs = 20
 loss = torch.nn.BCEWithLogitsLoss(reduction='mean')
 #loss = torch.nn.MSELoss(reduction='mean')
 criterion = torch.nn.L1Loss(reduction='mean')
