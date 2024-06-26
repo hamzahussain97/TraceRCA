@@ -17,8 +17,8 @@ warnings.filterwarnings('ignore')
 
 trainer_text = """
 ###############################################################################
-########### GNN/GRU Trained on MicroSS Dataset                     ############
-########### Validation on E2E Latencies                            ############
+########### GNN Trained on Micross Dataset                         ############
+########### / Validation on E2E Latencies                          ############
 ###############################################################################
 """
 print(trainer_text)
@@ -27,7 +27,7 @@ print(trainer_text)
 
 data_dir = './MicroSS/'
 batch_size = 5
-predict_graph = False
+predict_graph = True
 one_hot_enc = False
 normalize_features = ['cpu_use', 'mem_use_percent', 'mem_use_amount', 'net_send_rate', 'net_receive_rate', 'file_read_rate']
 normalize_by_node_features = ['cpu_use', 'mem_use_percent', 'mem_use_amount', 'net_send_rate', 'net_receive_rate', 'file_read_rate']
@@ -50,7 +50,7 @@ vocab_size = len(model_trainer.global_map)
 node_embedding_size = 30
 output_dim = len(quantiles)  # Assuming binary classification
 
-model = EmbEdgeGNNGRU(input_dim, hidden_dim, vocab_size, node_embedding_size, output_dim,\
+model = EmbGNN(input_dim, hidden_dim, vocab_size, node_embedding_size, output_dim,\
             predict_graph=model_trainer.predict_graph)
 model_trainer.set_model(model)
 

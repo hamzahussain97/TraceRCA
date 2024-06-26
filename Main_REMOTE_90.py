@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 
 trainer_text = """
 ###############################################################################
-########### GNN/GRU Trained on MicroSS Dataset                     ############
+########### GNN Trained on Alibaba Dataset                         ############
 ########### Validation on E2E Latencies                            ############
 ###############################################################################
 """
@@ -25,9 +25,9 @@ print(trainer_text)
 
 # Initialize Model Trainer
 
-data_dir = './MicroSS/'
+data_dir = './Alibaba/'
 batch_size = 5
-predict_graph = False
+predict_graph = True
 one_hot_enc = False
 normalize_features = ['cpu_use', 'mem_use_percent', 'mem_use_amount', 'net_send_rate', 'net_receive_rate', 'file_read_rate']
 normalize_by_node_features = ['cpu_use', 'mem_use_percent', 'mem_use_amount', 'net_send_rate', 'net_receive_rate', 'file_read_rate']
